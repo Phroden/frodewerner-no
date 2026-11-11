@@ -1,0 +1,14 @@
+---
+import Base from "../../layouts/Base.astro";
+import ItemCard from "../../components/ItemCard.astro";
+import { collection } from "../../lib/herah";
+const prosjekter = await collection("prosjekter");
+---
+<Base title="Prosjekter" description="Filmer, serier, kurs og andre prosjekter.">
+  <div class="hero">
+    <h1>Prosjekter</h1>
+    <p class="lead">Et utvalg av det jeg har laget.</p>
+  </div>
+  {prosjekter.length === 0 && <p class="empty">Prosjektene kommer snart.</p>}
+  <div class="grid">{prosjekter.map((p) => <ItemCard item={p} href={`/prosjekter/${p.id}`} />)}</div>
+</Base>

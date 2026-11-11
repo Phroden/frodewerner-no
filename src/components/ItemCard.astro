@@ -1,0 +1,14 @@
+---
+import type { Item } from "../lib/herah";
+interface Props { item: Item; href?: string }
+const { item, href } = Astro.props;
+const Tag = href ? "a" : "div";
+---
+<Tag class="card" href={href}>
+  {item.cover && <img src={item.cover} alt="" loading="lazy" />}
+  <div class="body">
+    {item.type.length > 0 && <ul class="tags">{item.type.map((t) => <li>{t}</li>)}</ul>}
+    <h3>{item.title}</h3>
+    {item.excerpt && <p>{item.excerpt}</p>}
+  </div>
+</Tag>

@@ -1,0 +1,20 @@
+---
+import Base from "../../layouts/Base.astro";
+import { collection } from "../../lib/herah";
+import type { Item } from "../../lib/herah";
+
+export async function getStaticPaths() {
+  return (await collection("prosjekter")).map((p) => ({ params: { id: p.id }, props: { p } }));
+}
+const { p } = Astro.props as { p: Item };
+---
+<Base title={p.title} description={p.excerpt || undefined}>
+  <div class="hero">
+    <p><a href="/prosjekter">← Alle prosjekter</a></p>
+    <h1>{p.title}</h1>
+    {p.type.length > 0 && <ul class="tags">{p.type.map((t) => <li>{t}</li>)}</ul>}
+  </div>
+  {p.cover && <img class="cover" src={p.cover} alt="" />}
+  <div class="prose"><Fragment set:html={p.html} /></div>
+  {p.url && <p><a class="btn" href={p.url} rel="noopener">Se prosjektet</a></p>}
+</Base>

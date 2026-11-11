@@ -1,0 +1,34 @@
+---
+import Base from "../layouts/Base.astro";
+import ItemCard from "../components/ItemCard.astro";
+import { collection } from "../lib/herah";
+const tjenester = (await collection("tjenester")).slice(0, 6);
+const prosjekter = (await collection("prosjekter")).slice(0, 6);
+---
+<Base>
+  <div class="hero">
+    <h1>Film, media og kurs – <em>fortalt godt</em>.</h1>
+    <p class="lead">Jeg lager film, stream og medieinnhold, og holder kurs. Fra idé til ferdig produksjon.</p>
+    <p><a class="btn" href="/kontakt">Ta kontakt</a><a class="btn ghost" href="/prosjekter">Se prosjekter</a></p>
+  </div>
+
+  {tjenester.length > 0 && (
+    <section>
+      <div class="head"><h2>Tjenester</h2><a href="/tjenester">Alle tjenester →</a></div>
+      <div class="grid">{tjenester.map((t) => <ItemCard item={t} href="/tjenester" />)}</div>
+    </section>
+  )}
+
+  {prosjekter.length > 0 && (
+    <section>
+      <div class="head"><h2>Prosjekter</h2><a href="/prosjekter">Alle prosjekter →</a></div>
+      <div class="grid">{prosjekter.map((p) => <ItemCard item={p} href={`/prosjekter/${p.id}`} />)}</div>
+    </section>
+  )}
+
+  <section class="cta">
+    <h2>Har du et prosjekt i tankene?</h2>
+    <p>Fortell meg hva du trenger, så finner vi en løsning som passer.</p>
+    <a class="btn" href="/kontakt">Ta kontakt</a>
+  </section>
+</Base>
