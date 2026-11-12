@@ -62,12 +62,13 @@ Feiler bygget (f.eks. en samling er avpublisert), blir forrige versjon stående,
 Sett opp én gang, som root på serveren:
 
 ```bash
-git clone https://github.com/Phroden/frodewerner-no.git /tmp/frodewerner-no   # repoet er privat: bruk SSH eller last ned server/install.sh
+git clone https://github.com/Phroden/frodewerner-no.git /tmp/frodewerner-no
 sudo bash /tmp/frodewerner-no/server/install.sh
 ```
 
-Skriptet installerer Node og rsync, lager brukeren `sitebuild`, lager en lesenøkkel du legger til som *deploy key* (bare lesing) på GitHub,
-henter koden til `/opt/frodewerner-no` og slår på timeren. Følg med: `journalctl -u frodewerner-build -f`.
+Skriptet installerer Node og rsync, lager brukeren `sitebuild`, henter koden til `/opt/frodewerner-no`, legger Caddy-oppsettet på plass
+og slår på timeren. Repoet er offentlig, så det trengs ingen nøkkel; gjøres det privat, lager skriptet en lesenøkkel du legger til som
+*deploy key* (bare lesing) på GitHub. Følg med: `journalctl -u frodewerner-build -f`.
 
 ### For hånd
 
