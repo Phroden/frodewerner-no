@@ -27,18 +27,25 @@ Ingen hemmeligheter trengs, siden alt som hentes er offentlig.
 
 ## Legge ut
 
-`dist/` er hele nettsiden. På Hetzner-serveren kan Caddy servere den direkte:
+`dist/` er hele nettsiden. Caddy på Hetzner-serveren serverer `/var/www/frodewerner.no` (se `/etc/caddy/sites/frodewerner.caddy`).
 
-```
-frodewerner.no, www.frodewerner.no {
-	root * /var/www/frodewerner.no
-	encode zstd gzip
-	file_server
-	handle_errors {
-		rewrite * /404.html
-		file_server
-	}
-}
+### Automatisk (anbefalt)
+
+En systemd-timer på serveren ser etter endringer hvert minutt (`server/build-if-changed.sh`) og bygger bare når noe er nytt:
+ny kode på `main` i dette repoet, eller ny versjon fra Herah (`/api/site/version`, som bare endrer seg når noe *publisert* endres –
+poster i publiserte samlinger, publiserte sider, felt og filer). Publiser eller rediger i Herah, så ligger det på nettet etter ca. ett til to minutter.
+Feiler bygget (f.eks. en samling er avpublisert), blir forrige versjon stående, og det prøves på nytt tidligst etter ti minutter.
+
+Sett opp én gang, som root på serveren:
+
+```bash
+git clone https://github.com/Phroden/frodewerner-no.git /tmp/frodewerner-no   # repoet er privat: bruk SSH eller last ned server/install.sh
+sudo bash /tmp/frodewerner-no/server/install.sh
 ```
 
-Legg ut med `./deploy.sh` (bygger og kopierer til serveren). Siden må bygges på nytt når innholdet i Herah endres (webhook fra Herah er neste steg).
+Skriptet installerer Node og rsync, lager brukeren `sitebuild`, lager en lesenøkkel du legger til som *deploy key* (bare lesing) på GitHub,
+henter koden til `/opt/frodewerner-no` og slår på timeren. Følg med: `journalctl -u frodewerner-build -f`.
+
+### For hånd
+
+`./deploy.sh` bygger lokalt og kopierer til serveren med rsync (nyttig hvis timeren ikke er satt opp).
