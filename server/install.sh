@@ -45,6 +45,31 @@ if [ ! -d "$APP/.git" ]; then
   fi
 fi
 as_build git -C "$APP" remote get-url origin >/dev/null
+as_build git -C "$APP" fetch --quiet origin main && as_build git -C "$APP" reset --hard --quiet origin/main
+
+echo "== Caddy (frodewerner.no)"
+# Oppsettet ligger i repoet (server/frodewerner.caddy). Er det endret, tas en kopi av det gamle; godtar ikke Caddy det nye, legges det gamle tilbake.
+SITE_CADDY=/etc/caddy/sites/frodewerner.caddy
+if command -v caddy >/dev/null && [ -f /etc/caddy/Caddyfile ]; then
+  mkdir -p /etc/caddy/sites
+  if ! cmp -s "$APP/server/frodewerner.caddy" "$SITE_CADDY"; then
+    BACKUP=""
+    if [ -f "$SITE_CADDY" ]; then BACKUP="$SITE_CADDY.bak-$(date +%Y%m%d-%H%M%S)"; cp "$SITE_CADDY" "$BACKUP"; fi
+    install -m 644 "$APP/server/frodewerner.caddy" "$SITE_CADDY"
+    if caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null 2>&1; then
+      systemctl reload caddy
+      echo "Caddy-oppsettet er oppdatert${BACKUP:+ (det gamle ligger i $BACKUP)}"
+    else
+      echo "Caddy godtok ikke det nye oppsettet – legger tilbake det gamle:"
+      caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile 2>&1 | tail -3 || true
+      if [ -n "$BACKUP" ]; then mv "$BACKUP" "$SITE_CADDY"; else rm -f "$SITE_CADDY"; fi
+    fi
+  else
+    echo "Caddy-oppsettet er uendret"
+  fi
+else
+  echo "Fant ikke Caddy – hopper over (frodewerner.caddy må legges inn for hånd)"
+fi
 
 echo "== systemd"
 install -m 644 "$APP/server/frodewerner-build.service" /etc/systemd/system/
