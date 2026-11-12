@@ -2,17 +2,20 @@
 import "@fontsource-variable/bricolage-grotesque";
 import "@fontsource-variable/inter";
 import "../styles/global.css";
-import { home } from "../lib/herah";
+import { home, menu } from "../lib/herah";
 interface Props { title?: string; description?: string }
 const { title, description = "Film, media og kurs – Frode Werner Film & Media." } = Astro.props;
 const full = title ? `${title} – Frode Werner Film & Media` : "Frode Werner Film & Media";
-const { kontakt } = await home();
+const { kontakt, sections } = await home();
 const path = Astro.url.pathname.replace(/\/$/, "") || "/";
+// Menyen følger «Vis i menyen» i Herah (Nettsted); «Om meg» vises når seksjonen er synlig på forsiden. Kontakt vises alltid.
+const inMenu = await menu();
+const omVisible = sections.some((s) => s.key === "om" && s.visible);
 const nav = [
-  { href: "/tjenester", label: "Tjenester" },
-  { href: "/prosjekter", label: "Prosjekter" },
-  { href: "/#om", label: "Om meg" },
-];
+  { href: "/tjenester", label: "Tjenester", show: !inMenu || inMenu.has("tjenester") },
+  { href: "/prosjekter", label: "Prosjekter", show: !inMenu || inMenu.has("prosjekter") },
+  { href: "/#om", label: "Om meg", show: omVisible },
+].filter((n) => n.show);
 ---
 <!doctype html>
 <html lang="nb">
@@ -45,9 +48,7 @@ const nav = [
       <div class="wrap">
         <div><b>Frode Werner Film &amp; Media</b>Årnes, Nes kommune{kontakt.orgnr && ` · Org.nr. ${kontakt.orgnr}`} · © {new Date().getFullYear()}</div>
         <nav aria-label="Bunnmeny">
-          <a class="navlink" href="/tjenester">Tjenester</a>
-          <a class="navlink" href="/prosjekter">Prosjekter</a>
-          <a class="navlink" href="/#om">Om meg</a>
+          {nav.map((n) => <a class="navlink" href={n.href}>{n.label}</a>)}
           <a class="navlink" href="/kontakt">Kontakt</a>
         </nav>
       </div>

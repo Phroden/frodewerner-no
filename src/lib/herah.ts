@@ -1,7 +1,8 @@
 // Henter det som er publisert i Herah (herah.frodewerner.no/api/site) når siden bygges.
 // Alt er offentlig, så ingen nøkler trengs. Finnes ikke Herah-data, brukes `fallback` bare lokalt
 // (HERAH_ALLOW_FALLBACK != "0"); i produksjonsbygget feiler bygget heller enn å publisere plassholdere.
-import { marked } from "marked";
+import { md as markdown, safeHref } from "./markdown";
+import { type Embed, embedHtml } from "./embeds";
 import { getImage, inferRemoteSize } from "astro:assets";
 import { fallback } from "./fallback";
 import { homeDefaults, type HomeContent } from "./home-defaults";
@@ -23,12 +24,21 @@ export interface Item {
   link?: boolean;
 }
 export interface PageContent { title: string; html: string }
+type Embeds = Record<string, Embed | null> | undefined;
+
+class HerahError extends Error {
+  constructor(path: string, readonly status: number) { super(`${path}: ${status}`); }
+}
 
 async function get<T>(path: string): Promise<T> {
   const r = await fetch(`${API}/api/site${path}`);
-  if (!r.ok) throw new Error(`${path}: ${r.status}`);
+  if (!r.ok) throw new HerahError(path, r.status);
   return await r.json() as T;
 }
+
+/** 404 fra Herah = ikke publisert. Alt annet (nettverksfeil, 500) skal stoppe produksjonsbygget, så forrige versjon blir stående. */
+const notPublished = (e: unknown) => e instanceof HerahError && e.status === 404;
+
 
 const toList = (v: unknown): string[] =>
   Array.isArray(v) ? v.map((x) => (typeof x === "string" ? x : (x as { name?: string; title?: string })?.name ?? (x as { title?: string })?.title ?? "")).filter(Boolean)
@@ -58,11 +68,29 @@ export function localImage(src: string, width = 1200, remoteFallback = true): Pr
   return images.get(key)!;
 }
 
-/** Markdown fra Herah → HTML. Egne blokker (::samling, ::side …) fjernes, og bilder lastes ned (localImage). */
-export async function render(md: string, slug: string): Promise<string> {
-  const text = md.split("\n").filter((l) => !/^\s*::[a-zæøå]+\[/.test(l)).join("\n")
-    .replace(/\/api\/ws\/files\/([0-9a-f-]{36})/gi, `${API}/api/site/${slug}/files/$1`);
-  let html = marked.parse(text, { async: false }) as string;
+/**
+ * Markdown fra Herah → HTML. Innebygde samlinger (`::samling[…](site:N)`, innholdet i `embeds[N]`) blir tabell, kort, tavle eller datoliste
+ * (embeds.ts); andre egne blokker (::side, ::inkluder, ::bokmerke, skjulte samlinger) fjernes. Bilder lastes ned (localImage).
+ * `src` er id-en til siden eller posten teksten hører til (filene i blokkene hentes via den).
+ */
+export async function render(md: string, slug: string, embeds?: Embeds, src = ""): Promise<string> {
+  const blocks: string[] = [];
+  const lines: string[] = [];
+  for (const l of md.split("\n")) {
+    const m = l.match(/^\s*::samling\[[^\]]*\]\(site:(\d+)\)\s*$/);
+    const e = m ? embeds?.[m[1]] : null;
+    if (e && src) {
+      const base = `${API}/api/site/${slug}/e/${src}/${m![1]}/files`;
+      const covers = new Map<string, string>();
+      for (const it of e.items) if (it.cover) covers.set(it.id, await localImage(`${base}/${it.cover}`, 900));
+      // Plassholder som marked lar være i fred; byttes med HTML-en etterpå
+      lines.push("", `HERAHEMBED${blocks.length}X`, "");
+      blocks.push(embedHtml(e, covers, (id) => `${base}/${id}`));
+    } else if (!/^\s*::[a-zæøå]+\[/.test(l)) lines.push(l);
+  }
+  const text = lines.join("\n").replace(/\/api\/ws\/files\/([0-9a-f-]{36})/gi, `${API}/api/site/${slug}/files/$1`);
+  let html = markdown.parse(text, { async: false }) as string;
+  html = html.replace(/<p>HERAHEMBED(\d+)X<\/p>/g, (_, i) => blocks[Number(i)] ?? "");
   // Bilder i teksten: <img src="https://herah…/api/site/<slug>/files/<id>">
   const prefix = `${API}/api/site/`;
   const srcs = [...new Set([...html.matchAll(/<img\b[^>]*\bsrc="([^"]+)"/gi)].map((m) => m[1]).filter((u) => u.startsWith(prefix)))];
@@ -77,10 +105,11 @@ const clip = (s: string, n = 160) => (s.length > n ? s.slice(0, n).replace(/\s+\
 
 type CollectionResp = {
   links?: boolean;
+  total?: number;
   fields: { id: string; name: string; config?: { options?: { id: string; name: string }[] } }[];
   items: { id: string; title: string; values: Record<string, unknown> }[];
 };
-type RecordResp = { record: { body?: string; cover?: string | null } };
+type RecordResp = { record: { body?: string; cover?: string | null; embeds?: Embeds } };
 
 /** Alle poster i en publisert samling, med notat og toppbilde hentet per post. Hentes én gang per bygg (flere sider bruker samme samling). */
 const collections = new Map<string, Promise<Item[]>>();
@@ -91,7 +120,13 @@ export function collection(slug: string): Promise<Item[]> {
 
 async function loadCollection(slug: string): Promise<Item[]> {
   try {
+    // Herah gir 500 poster om gangen; hent resten med offset
     const c = await get<CollectionResp>(`/${slug}`);
+    while (c.total != null && c.items.length < c.total) {
+      const more = await get<CollectionResp>(`/${slug}?offset=${c.items.length}`);
+      if (!more.items.length) break;
+      c.items.push(...more.items);
+    }
     // Valg (select, flervalg, status) lagres som id-er; gjør dem om til navnene
     const byName = (name: string, values: Record<string, unknown>) => {
       const f = c.fields.find((x) => x.name.toLowerCase() === name);
@@ -105,10 +140,14 @@ async function loadCollection(slug: string): Promise<Item[]> {
       let html = "", cover: string | null = null;
       try {
         const r = (await get<RecordResp>(`/${slug}/r/${it.id}`)).record;
-        html = await render(r.body ?? "", slug);
+        html = await render(r.body ?? "", slug, r.embeds, it.id);
         cover = r.cover ? await localImage(`${API}/api/site/${slug}/files/${r.cover}`, 1600) : null;
-      } catch { /* posten mangler notat eller bilde */ }
-      const url = toList(byName("url", it.values))[0] ?? "";
+      } catch (e) {
+        // I produksjon stopper bygget heller enn å publisere prosjekter uten tekst og bilde fordi én henting feilet
+        if (!ALLOW_FALLBACK) throw e;
+        console.warn(`[herah] ${slug}/${it.id}: uten notat og bilde (${(e as Error).message})`);
+      }
+      const url = safeHref(toList(byName("url", it.values))[0]) ?? "";
       return {
         id: it.id, title: it.title, type: toList(byName("type", it.values)).concat(toList(byName("tags", it.values))),
         status: toList(byName("status", it.values))[0] ?? "", url, html, cover, excerpt: clip(plain(html)),
@@ -122,14 +161,33 @@ async function loadCollection(slug: string): Promise<Item[]> {
   }
 }
 
-/** En publisert side (tekst), eller null hvis den ikke finnes */
+/** En publisert side (tekst), eller null hvis den ikke er publisert. Andre feil stopper produksjonsbygget. */
 export async function page(slug: string): Promise<PageContent | null> {
   try {
-    const p = (await get<{ page: { title: string; body: string } }>(`/${slug}`)).page;
-    return { title: p.title, html: await render(p.body, slug) };
-  } catch {
-    return ALLOW_FALLBACK ? (fallback.pages[slug] ?? null) : null;
+    const p = (await get<{ page: { id: string; title: string; body: string; embeds?: Embeds } }>(`/${slug}`)).page;
+    return { title: p.title, html: await render(p.body, slug, p.embeds, p.id) };
+  } catch (e) {
+    if (ALLOW_FALLBACK) return fallback.pages[slug] ?? null;
+    if (notPublished(e)) return null;
+    throw new Error(`Kunne ikke hente "${slug}" fra Herah (${(e as Error).message})`);
   }
+}
+
+/**
+ * Menyen: slugene som er publisert og har «Vis i menyen» på i Herah. null = vis alt (lokalt uten Herah).
+ */
+let menuPromise: Promise<Set<string> | null> | null = null;
+export function menu(): Promise<Set<string> | null> {
+  menuPromise ??= (async () => {
+    try {
+      const r = await get<{ items: { slug: string; in_menu: boolean }[] }>("");
+      return new Set(r.items.filter((i) => i.in_menu).map((i) => i.slug));
+    } catch (e) {
+      if (ALLOW_FALLBACK) return null;
+      throw new Error(`Fant ikke menyen i Herah (${(e as Error).message})`);
+    }
+  })();
+  return menuPromise;
 }
 
 

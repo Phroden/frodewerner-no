@@ -14,6 +14,20 @@ Nettsiden til Frode Werner Film & Media. Statisk side (Astro) som henter innhold
 Publiser en samling eller side i Herah (`POST /api/ws/site`) med riktig slug, velg hvilke felt som skal vises (`visible_fields`)
 og slå på `include_body` for notatene. Bare tittelfeltet og feltene du velger, sendes ut.
 
+**Menyen** følger «Vis i menyen» i Herah for `tjenester` og `prosjekter` (`menu()` i `src/lib/herah.ts`); «Om meg» vises når seksjonen er synlig
+på forsiden, og Kontakt vises alltid.
+
+**Tekst** (notater og sider) gjøres om fra markdown med `src/lib/markdown.ts`: HTML i teksten vises som tekst, slik Herah selv viser den, og lenker
+og bilder godtas bare med http(s), mailto:, tel: eller relativ adresse (ellers `#`). Det samme gjelder URL-feltet («Se prosjektet»).
+Tester: `npm test`.
+
+**Innebygde samlinger**: en samling du bygger inn i en publisert side eller et publisert postnotat i Herah (`::samling`-blokk), vises på nettsiden med postene
+blokken viser og kolonnene du velger under «🌐 Kolonner på nettsiden» i ⚙ på blokken. Herah sender den som `::samling[…](site:N)` med innholdet i `embeds[N]`;
+`src/lib/embeds.ts` lager tabell, kort med toppbilde (galleri), tavle eller datoliste (kalender) som statisk HTML. Toppbildene lastes ned ved bygging.
+
+**Feil fra Herah** i produksjonsbygget (`HERAH_ALLOW_FALLBACK=0`) stopper bygget, så forrige versjon blir stående: bare 404 (ikke publisert) gir en tom side.
+Samlinger med mer enn 500 poster hentes i flere omganger.
+
 **Bilder** lastes ned fra Herah og skaleres (webp, toppbilder høyst 1600 px, bilder i teksten høyst 1200 px, aldri større enn originalen)
 når siden bygges (`localImage` i `src/lib/herah.ts`, `astro:assets`). De ligger i `dist/_astro` sammen med resten, så de besøkende ikke
 henter originalene fra Herah, og nettsiden virker selv om Herah er nede. Går ett bilde ikke å laste ned, brukes adressen hos Herah, og bygget fortsetter.
