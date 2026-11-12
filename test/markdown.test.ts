@@ -49,3 +49,13 @@ test("codeMask: linjer i kodeblokker, som i Herah", async () => {
   const lines = ["a", "```js", "::samling[x](site:0)", "```", "::samling[y](site:1)", "``` ", "b"];
   assert.deepEqual(codeMask(lines), [false, true, true, true, false, true, true]);
 });
+
+test("herah:-lenker oversettes, ukjente blir tekst", async () => {
+  const { md, setHerahLinks } = await import("../src/lib/markdown.ts");
+  setHerahLinks((h) => (h === "herah:post/prosjekter/abc" ? "/prosjekter/abc" : h === "herah:side/kontakt" ? "/kontakt" : null));
+  const out = md.parse("[Et prosjekt](herah:post/prosjekter/abc), [kontakt](herah:side/kontakt) og [ukjent](herah:samling/hemmelig)", { async: false }) as string;
+  assert.match(out, /<a href="\/prosjekter\/abc">Et prosjekt<\/a>/);
+  assert.match(out, /<a href="\/kontakt">kontakt<\/a>/);
+  assert.ok(out.includes(" og ukjent") && !out.includes("hemmelig"), out);
+  setHerahLinks(() => null);
+});

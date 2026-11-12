@@ -1,0 +1,40 @@
+# Testene og en prøvebygging på hver PR og hver push til main. Bygget bruker plassholdere (Herah trengs ikke),
+# så det sjekker at koden bygger – det ekte bygget med innhold fra Herah skjer på serveren (server/build-if-changed.sh).
+name: Tester
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tester-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tester og bygging
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm test
+      - name: Prøvebygging (med plassholdere)
+        env:
+          HERAH_API: http://127.0.0.1:9
+          HERAH_ALLOW_FALLBACK: "1"
+        run: npm run build
+      - name: Sjekk at sidene og byggestatusen er laget
+        run: |
+          for f in index.html kontakt/index.html tjenester/index.html prosjekter/index.html 404.html herah-build.json; do
+            test -s "dist/$f" || { echo "Mangler dist/$f"; exit 1; }
+          done
+          node -e 'const b=JSON.parse(require("fs").readFileSync("dist/herah-build.json","utf8")); if(!Array.isArray(b.uses)||!b.uses.length) process.exit(1)'
