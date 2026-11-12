@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "test": "node --experimental-strip-types --no-warnings --test test/"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",

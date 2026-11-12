@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Setter opp automatisk bygging av frodewerner.no på serveren. Kjør som root, én gang: bash server/install.sh
-# (kan kjøres på nytt uten skade). Repoet er privat, så det trengs en lesenøkkel («deploy key») på GitHub; skriptet lager den og forklarer.
+# (kan kjøres på nytt uten skade). Er repoet privat, trengs en lesenøkkel («deploy key») på GitHub; skriptet lager den og forklarer.
 set -euo pipefail
 [ "$(id -u)" = 0 ] || { echo "Kjør som root (sudo bash server/install.sh)"; exit 1; }
 

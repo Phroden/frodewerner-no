@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Bygger frodewerner.no og legger den ut på serveren. Kjør fra denne mappen: ./deploy.sh
-# DEPLOY_HOST (standard root@167.233.119.26) og DEPLOY_PATH (standard /var/www/frodewerner.no) kan overstyres.
+# DEPLOY_HOST (standard root@frodewerner.no – samme server som Herah) og DEPLOY_PATH (standard /var/www/frodewerner.no) kan overstyres.
 set -euo pipefail
 cd "$(dirname "$0")"
-HOST="${DEPLOY_HOST:-root@167.233.119.26}"
+HOST="${DEPLOY_HOST:-root@frodewerner.no}"
 DEST="${DEPLOY_PATH:-/var/www/frodewerner.no}"
 
 npm ci
