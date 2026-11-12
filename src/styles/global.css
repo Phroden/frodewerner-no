@@ -134,3 +134,19 @@ footer.site b { display: block; font: 700 18px var(--head); color: var(--ink); }
 footer.site nav { display: flex; flex-wrap: wrap; gap: 24px; align-items: center; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 [hidden] { display: none !important; }
+
+/* YouTube-visning (bilde først, video etter trykk) */
+.yt, .yt-frame { display: block; position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 24px; overflow: hidden; border: 0; background: #000; }
+.yt img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.yt.ph { background-color: #E9E5DC; }
+.yt .play { position: absolute; inset: 0; margin: auto; width: 84px; height: 84px; border-radius: 50%; background: #fff; color: var(--ink); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgb(31 30 27 / .18); transition: transform .2s ease; }
+.yt:hover .play { transform: scale(1.06); }
+.hero-text.wide { flex-basis: 100%; }
+.contact .rows { flex: 0 1 360px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.contact .row { text-decoration: none; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 18px 24px; border-radius: 16px; font-weight: 600; background: #fff; color: var(--ink); min-height: 0; }
+.contact .row.alt { background: rgb(255 255 255 / .12); color: #fff; border: 1px solid rgb(255 255 255 / .35); }
+.contact .row:hover { background: var(--sun); color: var(--ink); }
+.about.with-img { max-width: none; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 48px; }
+.about .portrait { flex: 1 1 280px; max-width: 420px; aspect-ratio: 4 / 5; border-radius: 20px; object-fit: cover; width: 100%; }
+.about .about-text { flex: 1 1 420px; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.prosess-lead, .sec-sub { color: var(--soft); max-width: 40rem; margin: 0; }

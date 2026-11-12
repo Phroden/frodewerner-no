@@ -6,7 +6,7 @@ const herahHost = new URL(process.env.HERAH_API ?? "https://herah.frodewerner.no
 export default defineConfig({
   site: "https://frodewerner.no",
   output: "static",
-  image: { domains: [herahHost] },
+  image: { domains: [herahHost, "i.ytimg.com"] },
   // Stilarket som egen fil (ikke <style> i siden), så Caddy kan ha en streng CSP uten 'unsafe-inline'
   build: { inlineStylesheets: "never" },
   // Skript som egen fil også når det er lite (CSP: script-src 'self' tillater ikke inline-skript)

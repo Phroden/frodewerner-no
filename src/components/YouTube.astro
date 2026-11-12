@@ -1,0 +1,24 @@
+---
+// YouTube uten at besøkende kontakter YouTube før de trykker: bilde med spill-knapp. Skriptet bytter det ut med videoen (youtube-nocookie.com).
+// Uten skript er det en vanlig lenke til videoen på YouTube.
+interface Props { id: string; thumb?: string; title?: string }
+const { id, thumb = "", title = "Video" } = Astro.props;
+---
+<a class={`yt${thumb ? "" : " ph"}`} href={`https://www.youtube.com/watch?v=${id}`} data-yt={id} data-title={title} rel="noopener" aria-label={`Spill av: ${title}`}>
+  {thumb && <img src={thumb} alt="" loading="lazy" />}
+  <span class="play" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z" /></svg></span>
+</a>
+<script>
+  document.querySelectorAll<HTMLAnchorElement>("a[data-yt]").forEach((a) => {
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      const f = document.createElement("iframe");
+      f.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(a.dataset.yt ?? "")}?autoplay=1&rel=0`;
+      f.title = a.dataset.title ?? "Video";
+      f.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
+      f.allowFullscreen = true;
+      f.className = "yt-frame";
+      a.replaceWith(f);
+    });
+  });
+</script>

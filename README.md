@@ -63,3 +63,7 @@ Styres i Herah under «Nettsted»: visning (filter), enkeltposter og «Postene k
 
 ## Design
 Følger «Medieprodusent nettside design» (Stilguide: papirhvit, skoggrønn aksent, solgul markering; Bricolage Grotesque og Inter, selvhostet via @fontsource). Alt stilsett ligger i `src/styles/global.css` (ingen inline-stil, pga. CSP). Filterknappene på prosjekter er en liten skriptfil (`ProjectGrid.astro`) og vises bare når prosjektene har mer enn én type.
+
+## Forsiden redigeres i Herah
+Nettsted → Forside: tekster, seksjoner (av/på og rekkefølge), YouTube-lenke eller bilde i toppen, kontaktinfo og portrett. YouTube vises som bilde med spill-knapp og lastes fra youtube-nocookie.com først når en besøkende trykker (`YouTube.astro`; miniatyren lastes ned ved bygging). Caddy-oppsettet tillater bare den vertene i `frame-src`: kjør `server/install.sh` på serveren etter oppdatering. Standardtekster: `src/lib/home-defaults.ts` (må følge `DEFAULTS` i Herah).
+

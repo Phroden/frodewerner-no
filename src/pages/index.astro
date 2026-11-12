@@ -2,99 +2,123 @@
 import Base from "../layouts/Base.astro";
 import ItemCard from "../components/ItemCard.astro";
 import ProjectGrid from "../components/ProjectGrid.astro";
-import { collection } from "../lib/herah";
+import YouTube from "../components/YouTube.astro";
+import { collection, home, homeImage, youtubeThumb } from "../lib/herah";
+
+const h = await home();
 const tjenester = (await collection("tjenester")).slice(0, 6);
 const alle = await collection("prosjekter");
 const prosjekter = alle.slice(0, 6);
-const heroImg = alle.find((p) => p.cover)?.cover ?? null;
-const strip = ["Reklamefilm", "Dokumentar", "Eventfilm", "Plakater", "Brosjyrer", "Kurs"];
+
+// Visning til høyre i toppen: valgt under Nettsted → Forside
+const hero = h.hero;
+const autoImg = alle.find((p) => p.cover)?.cover ?? null;
+const heroImg = hero.media === "image" && hero.image ? await homeImage(hero.image) : hero.media === "auto" ? autoImg : null;
+const ytThumb = hero.media === "youtube" && hero.youtube ? await youtubeThumb(hero.youtube) : "";
+const showArt = hero.media === "youtube" ? !!hero.youtube : hero.media === "none" ? false : true;
+const omImg = h.om.image ? await homeImage(h.om.image, 900) : "";
+
+// Overskrift med det valgte ordet utheva
+const at = hero.highlight ? hero.title.indexOf(hero.highlight) : -1;
+const [t1, t2, t3] = at >= 0 ? [hero.title.slice(0, at), hero.highlight, hero.title.slice(at + hero.highlight.length)] : [hero.title, "", ""];
+const lines = (s: string) => s.split("\n");
+const k = h.kontakt;
 ---
 <Base>
-  <section class="home-hero" id="top">
-    <div class="wrap">
-      <div class="hero-text">
-        <span class="badge"><i aria-hidden="true"></i>Film og trykk fra Nes på Romerike</span>
-        <h1>Gode historier, <mark>fortalt</mark> på film og papir.</h1>
-        <p>Jeg lager reklamefilm, dokumentar, eventfilm og trykksaker for bedrifter, kulturliv og foreninger. Personlig oppfølging fra første idé til ferdig fil – eller ferdig trykk.</p>
-        <div class="cta-row">
-          <a class="pill green" href="/prosjekter">Se prosjekter →</a>
-          <a class="pill white" href="/kontakt">Ta en uforpliktende prat</a>
-        </div>
-      </div>
-      <div class="hero-art">
-        <div class={`frame${heroImg ? "" : " ph"}`}>{heroImg && <img src={heroImg} alt="" />}</div>
-      </div>
-    </div>
-  </section>
-
-  <div class="strip" aria-hidden="true">
-    <div class="wrap">{strip.map((s, i) => <>{i > 0 && <i>✳︎</i>}<span>{s}</span></>)}</div>
-  </div>
-
-  {tjenester.length > 0 && (
-    <section class="block" id="tjenester">
-      <div class="wrap">
-        <div class="sec-head">
-          <div>
-            <span class="eyebrow">Tjenester</span>
-            <h2>Én leverandør for det som skal ses – på skjerm og på trykk.</h2>
+  {h.sections.filter((s) => s.visible).map((s) => {
+    switch (s.key) {
+      case "hero": return (
+        <section class="home-hero" id="top">
+          <div class="wrap">
+            <div class={`hero-text${showArt ? "" : " wide"}`}>
+              {hero.badge && <span class="badge"><i aria-hidden="true"></i>{hero.badge}</span>}
+              <h1>{t1}{t2 && <mark>{t2}</mark>}{t3}</h1>
+              {hero.text && <p>{hero.text}</p>}
+              <div class="cta-row">
+                {hero.primary.label && hero.primary.href && <a class="pill green" href={hero.primary.href}>{hero.primary.label}</a>}
+                {hero.secondary.label && hero.secondary.href && <a class="pill white" href={hero.secondary.href}>{hero.secondary.label}</a>}
+              </div>
+            </div>
+            {showArt && (
+              <div class="hero-art">
+                {hero.media === "youtube"
+                  ? <YouTube id={hero.youtube} thumb={ytThumb} title={hero.title} />
+                  : <div class={`frame${heroImg ? "" : " ph"}`}>{heroImg && <img src={heroImg} alt="" />}</div>}
+              </div>
+            )}
           </div>
-          <p>Film og trykksaker henger ofte sammen. Når det samme blikket står bak begge, får du et uttrykk som henger sammen også.</p>
+        </section>
+      );
+      case "strip": return h.strip.words.length > 0 && (
+        <div class="strip" aria-hidden="true">
+          <div class="wrap">{h.strip.words.map((w, i) => <>{i > 0 && <i>✳︎</i>}<span>{w}</span></>)}</div>
         </div>
-        <div class="grid">{tjenester.map((t, i) => <ItemCard item={t} index={i} href={t.link !== false ? `/tjenester/${t.id}` : "/tjenester"} />)}</div>
-      </div>
-    </section>
-  )}
-
-  {prosjekter.length > 0 && (
-    <section class="block white" id="prosjekter">
-      <div class="wrap">
-        <div class="sec-head">
-          <div>
-            <span class="eyebrow">Utvalgte prosjekter</span>
-            <h2>Nylig arbeid</h2>
+      );
+      case "tjenester": return tjenester.length > 0 && (
+        <section class="block" id="tjenester">
+          <div class="wrap">
+            <div class="sec-head">
+              <div>{h.tjenester.eyebrow && <span class="eyebrow">{h.tjenester.eyebrow}</span>}<h2>{h.tjenester.title}</h2></div>
+              {h.tjenester.text && <p>{h.tjenester.text}</p>}
+            </div>
+            <div class="grid">{tjenester.map((t, i) => <ItemCard item={t} index={i} href={t.link !== false ? `/tjenester/${t.id}` : "/tjenester"} />)}</div>
           </div>
-        </div>
-        <ProjectGrid items={prosjekter} />
-      </div>
-    </section>
-  )}
-
-  <section class="block">
-    <div class="wrap">
-      <div class="sec-head"><div>
-        <span class="eyebrow">Slik jobber jeg</span>
-        <h2>Enkelt, tydelig og uten overraskelser.</h2>
-      </div></div>
-      <div class="steps">
-        <div class="step"><b>01</b><h3>Idé og plan</h3><p>Vi tar en prat om hva du vil oppnå, hvem du snakker til og hva budsjettet tillater. Du får et konkret forslag og en fast pris.</p></div>
-        <div class="step"><b>02</b><h3>Produksjon</h3><p>Opptak, foto og design – med deg involvert underveis, så det du får er det du så for deg.</p></div>
-        <div class="step"><b>03</b><h3>Levering</h3><p>Ferdig film i formatene du trenger, og trykkfiler klare for trykkeriet – eller ferdig trykket og levert.</p></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="band" id="om">
-    <div class="wrap">
-      <div class="about">
-        <span class="eyebrow">Om meg</span>
-        <h2>Hei, jeg heter Frode.</h2>
-        <p>Jeg driver Frode Werner Film &amp; Media fra Nes på Romerike. Til daglig underviser jeg i medier og kommunikasjon, og på kveldstid står jeg i maskinrommet på Nes Kulturhus. Film, bilder og trykk har fulgt meg hele veien.</p>
-        <p>Når du jobber med meg, snakker du med den som faktisk gjør jobben – fra første skisse til siste eksport.</p>
-        <div class="facts"><span>Basert i Nes</span><span>Oppdrag i hele landet</span><span>Medieutdannet lærer</span></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="band" id="kontakt">
-    <div class="wrap">
-      <div class="contact">
-        <div>
-          <h2>Har du en idé?<br />La oss ta en kaffe.</h2>
-          <p>Fortell kort hva du tenker på, så kommer jeg tilbake med forslag og pris – vanligvis innen to virkedager.</p>
-        </div>
-        <a class="pill" href="/kontakt">Ta kontakt →</a>
-      </div>
-    </div>
-  </section>
+        </section>
+      );
+      case "prosjekter": return prosjekter.length > 0 && (
+        <section class="block white" id="prosjekter">
+          <div class="wrap">
+            <div class="sec-head">
+              <div>{h.prosjekter.eyebrow && <span class="eyebrow">{h.prosjekter.eyebrow}</span>}<h2>{h.prosjekter.title}</h2></div>
+              {h.prosjekter.text && <p>{h.prosjekter.text}</p>}
+            </div>
+            <ProjectGrid items={prosjekter} />
+          </div>
+        </section>
+      );
+      case "prosess": return h.prosess.steps.length > 0 && (
+        <section class="block">
+          <div class="wrap">
+            <div class="sec-head"><div>{h.prosess.eyebrow && <span class="eyebrow">{h.prosess.eyebrow}</span>}<h2>{h.prosess.title}</h2></div></div>
+            <div class="steps">
+              {h.prosess.steps.map((st, i) => <div class="step"><b>{String(i + 1).padStart(2, "0")}</b><h3>{st.title}</h3><p>{st.text}</p></div>)}
+            </div>
+          </div>
+        </section>
+      );
+      case "om": return (
+        <section class="band" id="om">
+          <div class="wrap">
+            <div class={`about${omImg ? " with-img" : ""}`}>
+              {omImg && <img class="portrait" src={omImg} alt="" loading="lazy" />}
+              <div class="about-text">
+                {h.om.eyebrow && <span class="eyebrow">{h.om.eyebrow}</span>}
+                <h2>{h.om.title}</h2>
+                {h.om.paragraphs.map((p) => <p>{p}</p>)}
+                {h.om.facts.length > 0 && <div class="facts">{h.om.facts.map((f) => <span>{f}</span>)}</div>}
+              </div>
+            </div>
+          </div>
+        </section>
+      );
+      case "kontakt": return (
+        <section class="band" id="kontakt">
+          <div class="wrap">
+            <div class="contact">
+              <div>
+                <h2>{lines(k.title).map((l, i) => <>{i > 0 && <br />}{l}</>)}</h2>
+                {k.text && <p>{k.text}</p>}
+              </div>
+              {k.email || k.phone ? (
+                <div class="rows">
+                  {k.email && <a class="row" href={`mailto:${k.email}`}><span>{k.email}</span><span aria-hidden="true">→</span></a>}
+                  {k.phone && <a class={`row${k.email ? " alt" : ""}`} href={`tel:${k.phone.replace(/[^0-9+]/g, "")}`}><span>{k.phone}</span><span aria-hidden="true">→</span></a>}
+                </div>
+              ) : <a class="pill" href="/kontakt">Ta kontakt →</a>}
+            </div>
+          </div>
+        </section>
+      );
+    }
+  })}
 </Base>

@@ -13,7 +13,7 @@ frodewerner.no {
 		Referrer-Policy "strict-origin-when-cross-origin"
 		Permissions-Policy "camera=(), microphone=(), geolocation=()"
 		# Ingen skript eller stil i selve sidene; bilder ligger her (fra Herah bare hvis ett ikke kunne lastes ned ved bygging)
-		Content-Security-Policy "default-src 'self'; img-src 'self' https://herah.frodewerner.no data:; style-src 'self'; font-src 'self'; script-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+		Content-Security-Policy "default-src 'self'; img-src 'self' https://herah.frodewerner.no data:; style-src 'self'; font-src 'self'; script-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; frame-src https://www.youtube-nocookie.com"
 		-Server
 	}
 	# Filene i /_astro har innholdet i navnet og kan mellomlagres lenge; sidene sjekkes på nytt hver gang

@@ -2,9 +2,11 @@
 import "@fontsource-variable/bricolage-grotesque";
 import "@fontsource-variable/inter";
 import "../styles/global.css";
+import { home } from "../lib/herah";
 interface Props { title?: string; description?: string }
 const { title, description = "Film, media og kurs – Frode Werner Film & Media." } = Astro.props;
 const full = title ? `${title} – Frode Werner Film & Media` : "Frode Werner Film & Media";
+const { kontakt } = await home();
 const path = Astro.url.pathname.replace(/\/$/, "") || "/";
 const nav = [
   { href: "/tjenester", label: "Tjenester" },
@@ -41,7 +43,7 @@ const nav = [
     <main><slot /></main>
     <footer class="site">
       <div class="wrap">
-        <div><b>Frode Werner Film &amp; Media</b>Årnes, Nes kommune · © {new Date().getFullYear()}</div>
+        <div><b>Frode Werner Film &amp; Media</b>Årnes, Nes kommune{kontakt.orgnr && ` · Org.nr. ${kontakt.orgnr}`} · © {new Date().getFullYear()}</div>
         <nav aria-label="Bunnmeny">
           <a class="navlink" href="/tjenester">Tjenester</a>
           <a class="navlink" href="/prosjekter">Prosjekter</a>

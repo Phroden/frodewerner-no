@@ -4,6 +4,8 @@
 import { marked } from "marked";
 import { getImage, inferRemoteSize } from "astro:assets";
 import { fallback } from "./fallback";
+import { homeDefaults, type HomeContent } from "./home-defaults";
+export type { HomeContent };
 
 const API = (process.env.HERAH_API ?? "https://herah.frodewerner.no").replace(/\/$/, "");
 const ALLOW_FALLBACK = (process.env.HERAH_ALLOW_FALLBACK ?? "1") !== "0";
@@ -38,8 +40,8 @@ const toList = (v: unknown): string[] =>
  * Går det ikke, brukes adressen hos Herah (bygget stopper ikke for ett bilde).
  */
 const images = new Map<string, Promise<string>>();
-export function localImage(src: string, width = 1200): Promise<string> {
-  const key = `${src}|${width}`;
+export function localImage(src: string, width = 1200, remoteFallback = true): Promise<string> {
+  const key = `${src}|${width}|${remoteFallback}`;
   if (!images.has(key)) {
     images.set(key, inferRemoteSize(src)
       .then((size) => {
@@ -49,8 +51,8 @@ export function localImage(src: string, width = 1200): Promise<string> {
       })
       .then((img) => img.src)
       .catch((e) => {
-        console.warn(`[herah] bildet ${src} ble ikke lastet ned (${(e as Error).message}) – bruker adressen hos Herah`);
-        return src;
+        console.warn(`[herah] bildet ${src} ble ikke lastet ned (${(e as Error).message})${remoteFallback ? " – bruker adressen hos Herah" : ""}`);
+        return remoteFallback ? src : "";
       }));
   }
   return images.get(key)!;
@@ -128,4 +130,43 @@ export async function page(slug: string): Promise<PageContent | null> {
   } catch {
     return ALLOW_FALLBACK ? (fallback.pages[slug] ?? null) : null;
   }
+}
+
+
+// ---------------------------------------------------------------------------
+// Forsiden (Nettsted → Forside i Herah). Standardtekstene ligger i home-defaults.ts og brukes bare lokalt eller hvis Herah ikke har forsiden ennå.
+// ---------------------------------------------------------------------------
+
+let homePromise: Promise<HomeContent> | null = null;
+export function home(): Promise<HomeContent> {
+  homePromise ??= (async () => {
+    try {
+      return await get<HomeContent>("/home");
+    } catch (e) {
+      const msg = (e as Error).message;
+      // Eldre Herah uten forside-API (404): standardtekstene. Andre feil stopper bygget, så en nettfeil ikke publiserer standardtekster over det du har skrevet.
+      if (ALLOW_FALLBACK || msg.endsWith(": 404")) {
+        console.warn(`[herah] forsiden: bruker standardtekstene (${msg})`);
+        return structuredClone(homeDefaults);
+      }
+      throw new Error(`Fant ikke forsiden i Herah (${msg})`);
+    }
+  })();
+  return homePromise;
+}
+
+/** Bilde lastet opp under Nettsted → Forside, lastet ned og skalert ved bygging */
+export const homeImage = (id: string, width = 1600) => localImage(`${API}/api/site/home/files/${id}`, width);
+
+/** Miniatyrbilde fra YouTube, lastet ned ved bygging så besøkende ikke kontakter YouTube før de trykker på videoen. "" hvis det ikke går. */
+export async function youtubeThumb(id: string): Promise<string> {
+  for (const name of ["maxresdefault", "hqdefault"]) {
+    const url = `https://i.ytimg.com/vi/${id}/${name}.jpg`;
+    try {
+      if (!(await fetch(url, { method: "HEAD" })).ok) continue;
+    } catch { continue; }
+    const local = await localImage(url, 1280, false);
+    if (local) return local;
+  }
+  return "";
 }
