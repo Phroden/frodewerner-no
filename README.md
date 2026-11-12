@@ -14,6 +14,11 @@ Nettsiden til Frode Werner Film & Media. Statisk side (Astro) som henter innhold
 Publiser en samling eller side i Herah (`POST /api/ws/site`) med riktig slug, velg hvilke felt som skal vises (`visible_fields`)
 og slå på `include_body` for notatene. Bare tittelfeltet og feltene du velger, sendes ut.
 
+**Bilder** lastes ned fra Herah og skaleres (webp, toppbilder høyst 1600 px, bilder i teksten høyst 1200 px, aldri større enn originalen)
+når siden bygges (`localImage` i `src/lib/herah.ts`, `astro:assets`). De ligger i `dist/_astro` sammen med resten, så de besøkende ikke
+henter originalene fra Herah, og nettsiden virker selv om Herah er nede. Går ett bilde ikke å laste ned, brukes adressen hos Herah, og bygget fortsetter.
+Hver samling hentes én gang per bygg, selv om flere sider bruker den.
+
 ## Bygge
 
 ```bash
@@ -27,7 +32,10 @@ Ingen hemmeligheter trengs, siden alt som hentes er offentlig.
 
 ## Legge ut
 
-`dist/` er hele nettsiden. Caddy på Hetzner-serveren serverer `/var/www/frodewerner.no` (se `/etc/caddy/sites/frodewerner.caddy`).
+`dist/` er hele nettsiden. Caddy på Hetzner-serveren serverer `/var/www/frodewerner.no`. Oppsettet ligger i repoet, i `server/frodewerner.caddy`:
+`www` sendes til `frodewerner.no`, streng CSP (sidene har ingen innebygd stil eller skript, `inlineStylesheets: "never"`), `/_astro/*` mellomlagres lenge,
+og ukjente adresser gir `404.html`. `server/install.sh` legger det i `/etc/caddy/sites/frodewerner.caddy` (Herahs Caddyfile importerer mappa).
+Er fila endret, tas en kopi av den gamle, og godtar ikke Caddy den nye, legges den gamle tilbake. Endrer du Caddy-fila: kjør `server/install.sh` på nytt.
 
 ### Automatisk (anbefalt)
 
