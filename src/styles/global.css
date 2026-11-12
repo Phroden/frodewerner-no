@@ -195,3 +195,7 @@ footer.site nav { display: flex; flex-wrap: wrap; gap: 24px; align-items: center
 .bookmark-text small { color: var(--muted); font-size: 13px; }
 .prose .bookmark img, .bookmark img { width: 180px; max-width: 34%; object-fit: cover; border-radius: 0; flex-shrink: 0; }
 @media (max-width: 560px) { .bookmark img { display: none; } }
+
+/* Innhold fra en annen side (::inkluder i Herah) */
+.included { margin: 1.2em 0; padding-left: 18px; border-left: 3px solid var(--line2); }
+.included > :first-child { margin-top: 0; }

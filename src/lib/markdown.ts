@@ -53,14 +53,28 @@ export function safeHref(href: string | null | undefined): string | null {
  * Markdown slik Herah viser den: HTML i teksten er tekst, ikke kode (Herah bygger visningen med DOM og viser «<b>» som «<b>»).
  * Uten dette ville HTML i et notat – skrevet av deg, importert fra Notion eller lagt inn av KI-en over MCP – havne rett på nettsiden.
  */
+/**
+ * Lenker Herah har skrevet om til nettstedet (herah:post/<slug>/<id>, herah:samling/<slug>, herah:side/<slug>) → adresser her.
+ * Settes av herah.ts (som vet hvilke sider som finnes). null = ingen side her: lenka blir vanlig tekst.
+ */
+let herahLinks: (href: string) => string | null = () => null;
+export function setHerahLinks(fn: (href: string) => string | null) {
+  herahLinks = fn;
+}
+
 export const md = new Marked({
   renderer: {
     html: ({ text }: Tokens.HTML | Tokens.Tag) => escapeHtml(text),
+    // En herah:-lenke uten side her blir vanlig tekst (href tom), ellers som vanlig
+    link(this: { parser: { parseInline(t: unknown[]): string } }, token: Tokens.Link) {
+      return token.href ? false : this.parser.parseInline(token.tokens);
+    },
   },
   walkTokens(token) {
     if (token.type === "link" || token.type === "image") {
       const t = token as Tokens.Link | Tokens.Image;
-      t.href = safeHref(t.href) ?? "#";
+      if (t.type === "link" && t.href.startsWith("herah:")) t.href = herahLinks(t.href) ?? "";
+      else t.href = safeHref(t.href) ?? "#";
     }
   },
 });

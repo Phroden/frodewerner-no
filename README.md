@@ -33,6 +33,12 @@ Linjer i kodeblokker (```) står urørt, også `::`-linjer (`codeMask` i `src/li
 når, og hvilke oppføringer nettsiden bruker (`uses` = `SLUGS` i `src/lib/herah.ts`; `collection()`/`page()` godtar bare disse). Herah henter fila og sier fra
 under «Trenger tilsyn» hvis nettsiden står stille, og Nettsted-fanen varsler om publiserte oppføringer nettsiden ikke bruker. Bruker du en ny oppføring, legg den i `SLUGS`.
 
+**Lenker**: Herah skriver om interne lenker i publiserte notater til `herah:post/<slug>/<id>`, `herah:samling/<slug>` og `herah:side/<slug>` (bare når målet er publisert);
+`herahHref` i `src/lib/herah.ts` gjør dem om til adressene her (`ROUTES`), og en lenke uten side her blir vanlig tekst.
+**Innhold fra side** (`::inkluder`) hentes fra Herah og vises der blokken står (høyst tre nivåer).
+
+**Tester på GitHub** (`.github/workflows/test.yml`): `npm test` og en prøvebygging med plassholdere på hver PR.
+
 **Feil fra Herah** i produksjonsbygget (`HERAH_ALLOW_FALLBACK=0`) stopper bygget, så forrige versjon blir stående: bare 404 (ikke publisert) gir en tom side.
 Samlinger med mer enn 500 poster hentes i flere omganger.
 

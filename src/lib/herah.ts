@@ -1,7 +1,7 @@
 // Henter det som er publisert i Herah (herah.frodewerner.no/api/site) når siden bygges.
 // Alt er offentlig, så ingen nøkler trengs. Finnes ikke Herah-data, brukes `fallback` bare lokalt
 // (HERAH_ALLOW_FALLBACK != "0"); i produksjonsbygget feiler bygget heller enn å publisere plassholdere.
-import { codeMask, md as markdown, safeHref } from "./markdown";
+import { codeMask, md as markdown, safeHref, setHerahLinks } from "./markdown";
 import { bookmarkHtml, type Bookmark, type Embed, embedHtml } from "./embeds";
 import { getImage, inferRemoteSize } from "astro:assets";
 import { fallback } from "./fallback";
@@ -16,6 +16,19 @@ const API = (process.env.HERAH_API ?? "https://herah.frodewerner.no").replace(/\
  */
 export const SLUGS = ["tjenester", "prosjekter", "kontakt"] as const;
 export type Slug = typeof SLUGS[number];
+/** Adressene her for oppføringene i SLUGS, og hvilke som har en egen side per post (/prosjekter/<id>) */
+const ROUTES: Record<Slug, string> = { tjenester: "/tjenester", prosjekter: "/prosjekter", kontakt: "/kontakt" };
+const HAS_POSTS: Partial<Record<Slug, true>> = { tjenester: true, prosjekter: true };
+
+/** herah:post/<slug>/<id> → /prosjekter/<id>, herah:samling/<slug> og herah:side/<slug> → /prosjekter, /kontakt; ukjent → null (tekst) */
+export function herahHref(href: string): string | null {
+  const m = href.match(/^herah:(post|samling|side)\/([a-z0-9-]+)(?:\/([0-9a-f-]{36}))?$/i);
+  if (!m || !(m[2] in ROUTES)) return null;
+  const slug = m[2] as Slug;
+  return m[1] === "post" && m[3] && HAS_POSTS[slug] ? `${ROUTES[slug]}/${m[3].toLowerCase()}` : ROUTES[slug];
+}
+setHerahLinks(herahHref);
+
 const checkSlug = (slug: string) => {
   if (!(SLUGS as readonly string[]).includes(slug)) throw new Error(`«${slug}» er ikke i SLUGS i src/lib/herah.ts – legg den til der`);
 };
@@ -78,6 +91,18 @@ export function localImage(src: string, width = 1200, remoteFallback = true): Pr
   return images.get(key)!;
 }
 
+/** En side som er inkludert med ::inkluder: hentes fra Herah og vises inne i teksten (høyst tre nivåer, aldri i ring) */
+async function includedPage(slug: string, id: string, seen: Set<string>): Promise<string> {
+  if (seen.has(id) || seen.size >= 3) return "";
+  try {
+    const p = (await get<{ page: { id: string; body: string; embeds?: Embeds } }>(`/${slug}/p/${id}`)).page;
+    return `<div class="included">${await render(p.body ?? "", slug, p.embeds, p.id, new Set([...seen, id]))}</div>`;
+  } catch (e) {
+    if (ALLOW_FALLBACK || notPublished(e)) return "";
+    throw new Error(`Kunne ikke hente siden som er inkludert i "${slug}" (${(e as Error).message})`);
+  }
+}
+
 /** Det Herah har hentet om et bokmerke (tittel, beskrivelse, bilde). null hvis det ikke går – et bokmerke stopper aldri bygget. */
 async function bookmarkMeta(url: string): Promise<(Bookmark & { image?: string | null }) | null> {
   try {
@@ -95,7 +120,7 @@ async function bookmarkMeta(url: string): Promise<(Bookmark & { image?: string |
  * (embeds.ts), bokmerker blir kort med bilde; andre egne blokker (::side, ::inkluder, skjulte samlinger) fjernes. Linjer i kodeblokker
  * står urørt. Bilder lastes ned (localImage). `src` er id-en til siden eller posten teksten hører til (filene i blokkene hentes via den).
  */
-export async function render(md: string, slug: string, embeds?: Embeds, src = ""): Promise<string> {
+export async function render(md: string, slug: string, embeds?: Embeds, src = "", seen: Set<string> = new Set()): Promise<string> {
   const blocks: string[] = [];
   const lines: string[] = [];
   const all = md.split("\n");
@@ -106,6 +131,7 @@ export async function render(md: string, slug: string, embeds?: Embeds, src = ""
     lines.push("", `HERAHEMBED${blocks.length}X`, "");
     blocks.push(html);
   };
+  let m2: RegExpMatchArray | null;
   for (const [i, l] of all.entries()) {
     if (code[i]) {
       lines.push(l);
@@ -125,6 +151,9 @@ export async function render(md: string, slug: string, embeds?: Embeds, src = ""
       const meta = /^https?:\/\//i.test(url) ? await bookmarkMeta(url) : null;
       const img = meta?.image?.startsWith("/api/bookmark-img/") ? await localImage(`${API}${meta.image}`, 600, false) : "";
       placeholder(bookmarkHtml(url, bm[1], meta, img));
+    } else if ((m2 = l.match(/^\s*::inkluder\[[^\]]*\]\(([0-9a-f-]{36})\)\s*$/i))) {
+      // «Innhold fra side»: siden hentes og vises her (Herah sender den bare når den er en del av det publiserte)
+      placeholder(await includedPage(slug, m2[1].toLowerCase(), seen));
     } else if (!/^\s*::[a-zæøå]+\[/.test(l)) lines.push(l);
   }
   const text = lines.join("\n").replace(/\/api\/ws\/files\/([0-9a-f-]{36})/gi, `${API}/api/site/${slug}/files/$1`);
@@ -206,7 +235,7 @@ export async function page(slug: Slug): Promise<PageContent | null> {
   checkSlug(slug);
   try {
     const p = (await get<{ page: { id: string; title: string; body: string; embeds?: Embeds } }>(`/${slug}`)).page;
-    return { title: p.title, html: await render(p.body, slug, p.embeds, p.id) };
+    return { title: p.title, html: await render(p.body, slug, p.embeds, p.id, new Set([p.id])) };
   } catch (e) {
     if (ALLOW_FALLBACK) return fallback.pages[slug] ?? null;
     if (notPublished(e)) return null;
