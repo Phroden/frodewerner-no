@@ -23,7 +23,8 @@ Tester: `npm test`.
 
 **Innebygde samlinger**: en samling du bygger inn i en publisert side eller et publisert postnotat i Herah (`::samling`-blokk), vises på nettsiden med postene
 blokken viser og kolonnene du velger under «🌐 Kolonner på nettsiden» i ⚙ på blokken. Herah sender den som `::samling[…](site:N)` med innholdet i `embeds[N]`;
-`src/lib/embeds.ts` lager tabell, kort med toppbilde (galleri), tavle eller datoliste (kalender) som statisk HTML. Toppbildene lastes ned ved bygging.
+`src/lib/embeds.ts` lager tabell, kort med toppbilde (galleri), tavle eller datoliste (kalender) som statisk HTML. Toppbildene lastes ned ved bygging. Overskriften over blokken
+er blokkens navn (kan endres i ⚙ på blokken) og kan skjules der («Vis overskrift over blokken», `show_title: false`; da får skjermlesere navnet som `aria-label`).
 
 **Feil fra Herah** i produksjonsbygget (`HERAH_ALLOW_FALLBACK=0`) stopper bygget, så forrige versjon blir stående: bare 404 (ikke publisert) gir en tom side.
 Samlinger med mer enn 500 poster hentes i flere omganger.

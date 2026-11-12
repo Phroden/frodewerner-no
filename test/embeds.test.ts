@@ -54,6 +54,14 @@ test("verdier", () => {
   assert.equal(valueHtml({ id: "x", name: "x", type: "checkbox" }, false), "");
 });
 
+test("overskriften kan skjules", () => {
+  assert.match(embedHtml(base), /<h3 class="embed-title">Standard størrelser &lt;trykk&gt;<\/h3>/);
+  const h = embedHtml({ ...base, show_title: false });
+  assert.ok(!h.includes("<h3"), h);
+  assert.match(h, /<section class="embed embed-table" aria-label="Standard størrelser &lt;trykk&gt;">/);
+  assert.match(embedHtml({ ...base, label: "Våre formater" }), />Våre formater<\/h3>/);
+});
+
 test("tom blokk og «viser N av M»", () => {
   assert.match(embedHtml({ ...base, items: [], total: 0 }), /Ingen oppføringer/);
   assert.match(embedHtml({ ...base, total: 700 }), /Viser 2 av 700/);
