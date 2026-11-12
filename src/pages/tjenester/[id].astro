@@ -10,6 +10,7 @@ export async function getStaticPaths() {
 const { t } = Astro.props as { t: Item };
 ---
 <Base title={t.title} description={t.excerpt || undefined}>
+<div class="page">
   <div class="hero">
     <p><a href="/tjenester">← Alle tjenester</a></p>
     <h1>{t.title}</h1>
@@ -18,4 +19,5 @@ const { t } = Astro.props as { t: Item };
   {t.cover && <img class="cover" src={t.cover} alt="" />}
   <div class="prose"><Fragment set:html={t.html} /></div>
   <p><a class="btn" href="/kontakt">Ta kontakt</a></p>
+</div>
 </Base>

@@ -5,23 +5,26 @@ import { collection } from "../../lib/herah";
 const tjenester = await collection("tjenester");
 ---
 <Base title="Tjenester" description="Film, stream, klipp og andre tjenester fra Frode Werner Film & Media.">
-  <div class="hero">
-    <h1>Tjenester</h1>
-    <p class="lead">Det jeg kan hjelpe deg med.</p>
-  </div>
-  {tjenester.length === 0 && <p class="empty">Tjenestene kommer snart.</p>}
-  <div class="grid">
-    {tjenester.map((t) => t.link !== false ? (
-      <ItemCard item={t} href={`/tjenester/${t.id}`} />
-    ) : (
-      <article class="card">
-        {t.cover && <img src={t.cover} alt="" loading="lazy" />}
-        <div class="body prose">
-          {t.type.length > 0 && <ul class="tags">{t.type.map((x) => <li>{x}</li>)}</ul>}
-          <h3>{t.title}</h3>
-          <Fragment set:html={t.html} />
-        </div>
-      </article>
-    ))}
+  <div class="page">
+    <div class="hero">
+      <h1>Tjenester</h1>
+      <p class="lead">Det jeg kan hjelpe deg med.</p>
+    </div>
+    {tjenester.length === 0 && <p class="empty">Tjenestene kommer snart.</p>}
+    <div class="grid">
+      {tjenester.map((t, i) => t.link !== false ? (
+        <ItemCard item={t} index={i} href={`/tjenester/${t.id}`} />
+      ) : (
+        <article class="card">
+          {t.cover && <img src={t.cover} alt="" loading="lazy" />}
+          <div class="body prose">
+            {!t.cover && <span class={`ico t${(i % 3) + 1}`} aria-hidden="true">✳︎</span>}
+            {t.type.length > 0 && <ul class="tags">{t.type.map((x) => <li>{x}</li>)}</ul>}
+            <h3>{t.title}</h3>
+            <Fragment set:html={t.html} />
+          </div>
+        </article>
+      ))}
+    </div>
   </div>
 </Base>

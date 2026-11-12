@@ -9,4 +9,6 @@ export default defineConfig({
   image: { domains: [herahHost] },
   // Stilarket som egen fil (ikke <style> i siden), så Caddy kan ha en streng CSP uten 'unsafe-inline'
   build: { inlineStylesheets: "never" },
+  // Skript som egen fil også når det er lite (CSP: script-src 'self' tillater ikke inline-skript)
+  vite: { build: { assetsInlineLimit: 0 } },
 });

@@ -60,3 +60,6 @@ henter koden til `/opt/frodewerner-no` og slår på timeren. Følg med: `journal
 
 ## Poster: hvilke som vises og om de kan åpnes
 Styres i Herah under «Nettsted»: visning (filter), enkeltposter og «Postene kan åpnes». Er den av, får postene ingen egen side (`/prosjekter/<id>`, `/tjenester/<id>`), og tjenestene viser hele teksten i kortet.
+
+## Design
+Følger «Medieprodusent nettside design» (Stilguide: papirhvit, skoggrønn aksent, solgul markering; Bricolage Grotesque og Inter, selvhostet via @fontsource). Alt stilsett ligger i `src/styles/global.css` (ingen inline-stil, pga. CSP). Filterknappene på prosjekter er en liten skriptfil (`ProjectGrid.astro`) og vises bare når prosjektene har mer enn én type.

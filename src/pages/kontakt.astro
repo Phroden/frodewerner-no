@@ -4,8 +4,10 @@ import { page } from "../lib/herah";
 const kontakt = await page("kontakt");
 ---
 <Base title="Kontakt" description="Ta kontakt med Frode Werner Film & Media.">
-  <div class="hero"><h1>Kontakt</h1></div>
-  {kontakt
-    ? <div class="prose"><Fragment set:html={kontakt.html} /></div>
-    : <p class="empty">Kontaktinformasjon kommer snart.</p>}
+  <div class="page">
+    <div class="hero"><h1>Kontakt</h1></div>
+    {kontakt
+      ? <div class="prose"><Fragment set:html={kontakt.html} /></div>
+      : <p class="empty">Kontaktinformasjon kommer snart.</p>}
+  </div>
 </Base>

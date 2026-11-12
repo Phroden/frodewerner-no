@@ -1,0 +1,36 @@
+---
+// Prosjektkort med filterknapper (type/kategori fra Herah). Filtreringen er en liten skriptfil; uten skript vises alle.
+import ProjectCard from "./ProjectCard.astro";
+import type { Item } from "../lib/herah";
+interface Props { items: Item[] }
+const { items } = Astro.props;
+const kinds = [...new Set(items.flatMap((p) => p.type))];
+---
+<div class="pwrap">
+  {kinds.length > 1 && (
+    <div class="filters" role="group" aria-label="Filtrer prosjekter" data-filters hidden>
+      <button type="button" class="chip" data-kind="" aria-pressed="true">Alle</button>
+      {kinds.map((k) => <button type="button" class="chip" data-kind={k} aria-pressed="false">{k}</button>)}
+    </div>
+  )}
+  <div class="pgrid" data-pgrid>
+    {items.map((p) => <ProjectCard item={p} href={p.link !== false ? `/prosjekter/${p.id}` : undefined} />)}
+  </div>
+</div>
+<style>
+  .pwrap { display: flex; flex-direction: column; gap: 32px; }
+</style>
+<script>
+  const bar = document.querySelector<HTMLElement>("[data-filters]");
+  if (bar) {
+    bar.hidden = false;
+    const cards = [...document.querySelectorAll<HTMLElement>("[data-pgrid] .pcard")];
+    bar.addEventListener("click", (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLButtonElement>("button[data-kind]");
+      if (!b) return;
+      const kind = b.dataset.kind ?? "";
+      bar.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      cards.forEach((c) => { c.hidden = !!kind && !(c.dataset.kinds ?? "").split(",").includes(kind); });
+    });
+  }
+</script>

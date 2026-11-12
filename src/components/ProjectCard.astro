@@ -1,0 +1,17 @@
+---
+import type { Item } from "../lib/herah";
+interface Props { item: Item; href?: string }
+const { item, href } = Astro.props;
+const Tag = href ? "a" : "div";
+const kinds = item.type.join(",");
+---
+<Tag class="pcard" href={href} data-kinds={kinds}>
+  <div class={`thumb${item.cover ? "" : " ph"}`}>
+    {item.cover && <img src={item.cover} alt="" loading="lazy" />}
+    {item.type[0] && <span class="kind">{item.type[0]}</span>}
+  </div>
+  <div>
+    <h3>{item.title}</h3>
+    {item.excerpt && <span class="meta">{item.excerpt}</span>}
+  </div>
+</Tag>

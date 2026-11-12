@@ -1,5 +1,7 @@
 ---
-import "@fontsource-variable/outfit";
+import "@fontsource-variable/bricolage-grotesque";
+import "@fontsource-variable/inter";
+import "../styles/global.css";
 interface Props { title?: string; description?: string }
 const { title, description = "Film, media og kurs – Frode Werner Film & Media." } = Astro.props;
 const full = title ? `${title} – Frode Werner Film & Media` : "Frode Werner Film & Media";
@@ -7,7 +9,7 @@ const path = Astro.url.pathname.replace(/\/$/, "") || "/";
 const nav = [
   { href: "/tjenester", label: "Tjenester" },
   { href: "/prosjekter", label: "Prosjekter" },
-  { href: "/kontakt", label: "Kontakt" },
+  { href: "/#om", label: "Om meg" },
 ];
 ---
 <!doctype html>
@@ -25,67 +27,28 @@ const nav = [
   </head>
   <body>
     <header class="top">
-      <a class="brand" href="/">Frode Werner <span>Film &amp; Media</span></a>
-      <nav aria-label="Hovedmeny">
-        {nav.map((n) => <a href={n.href} aria-current={path.startsWith(n.href) ? "page" : undefined}>{n.label}</a>)}
-      </nav>
+      <div class="wrap">
+        <a class="brand" href="/">
+          <span class="mark" aria-hidden="true">FW</span>
+          <span class="brand-name"><b>Frode Werner</b><small>Film &amp; Media</small></span>
+        </a>
+        <nav aria-label="Hovedmeny">
+          {nav.map((n) => <a class="navlink" href={n.href} aria-current={path.startsWith(n.href) && n.href !== "/#om" ? "page" : undefined}>{n.label}</a>)}
+          <a class="pill dark" href="/kontakt" aria-current={path.startsWith("/kontakt") ? "page" : undefined}>Ta kontakt</a>
+        </nav>
+      </div>
     </header>
     <main><slot /></main>
-    <footer>
-      <p>© {new Date().getFullYear()} Frode Werner Film &amp; Media</p>
+    <footer class="site">
+      <div class="wrap">
+        <div><b>Frode Werner Film &amp; Media</b>Årnes, Nes kommune · © {new Date().getFullYear()}</div>
+        <nav aria-label="Bunnmeny">
+          <a class="navlink" href="/tjenester">Tjenester</a>
+          <a class="navlink" href="/prosjekter">Prosjekter</a>
+          <a class="navlink" href="/#om">Om meg</a>
+          <a class="navlink" href="/kontakt">Kontakt</a>
+        </nav>
+      </div>
     </footer>
   </body>
 </html>
-
-<style is:global>
-  :root {
-    --bg: #faf8f4; --surface: #fff; --ink: #1b1a1f; --muted: #5d5b66; --line: #e8e4dc;
-    --teal: #1f6f78; --teal-dark: #17565d; --orange: #e26d3d; --radius: 18px;
-  }
-  * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 400 1.0625rem/1.65 "Outfit Variable", system-ui, sans-serif; }
-  a { color: var(--teal); }
-  a:hover { color: var(--teal-dark); }
-  :focus-visible { outline: 3px solid var(--orange); outline-offset: 3px; border-radius: 6px; }
-  .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.25rem clamp(1rem, 5vw, 4rem); }
-  .brand { font-weight: 700; font-size: 1.2rem; color: var(--ink); text-decoration: none; }
-  .brand span { font-weight: 400; color: var(--muted); }
-  .top nav { display: flex; gap: .25rem; }
-  .top nav a { padding: .45rem .9rem; border-radius: 999px; color: var(--ink); text-decoration: none; font-weight: 500; }
-  .top nav a:hover { background: #efebe3; }
-  .top nav a[aria-current="page"] { background: var(--ink); color: var(--bg); }
-  main { padding: 0 clamp(1rem, 5vw, 4rem) 4rem; max-width: 76rem; margin: 0 auto; }
-  footer { padding: 2rem clamp(1rem, 5vw, 4rem); color: var(--muted); border-top: 1px solid var(--line); font-size: .95rem; }
-  h1, h2, h3 { line-height: 1.15; letter-spacing: -.01em; margin: 0 0 .6em; }
-  h1 { font-size: clamp(2.2rem, 6vw, 4rem); font-weight: 700; }
-  h2 { font-size: clamp(1.5rem, 3.5vw, 2.1rem); }
-  .lead { font-size: 1.25rem; color: var(--muted); max-width: 40rem; }
-  .hero { padding: clamp(2.5rem, 8vw, 6rem) 0 clamp(2rem, 5vw, 4rem); }
-  .hero em { font-style: normal; color: var(--teal); }
-  .btn { display: inline-block; background: var(--teal); color: #fff; padding: .75rem 1.4rem; border-radius: 999px; font-weight: 600; text-decoration: none; }
-  .btn:hover { background: var(--teal-dark); color: #fff; }
-  .btn.ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); margin-left: .5rem; }
-  .btn.ghost:hover { background: var(--ink); color: var(--bg); }
-  section { margin-top: clamp(2.5rem, 6vw, 4.5rem); }
-  .head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
-  .grid { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); }
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; text-decoration: none; color: inherit; transition: transform .15s, box-shadow .15s; }
-  a.card:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgb(27 26 31 / .1); color: inherit; }
-  .card img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; display: block; }
-  .card .body { padding: 1.1rem 1.25rem 1.3rem; }
-  .card h3 { font-size: 1.25rem; margin-bottom: .35em; }
-  .card p { margin: 0; color: var(--muted); font-size: 1rem; }
-  .tags { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 .6rem; padding: 0; list-style: none; }
-  .tags li { background: #e5f0f1; color: var(--teal-dark); font-size: .8rem; font-weight: 600; padding: .15rem .65rem; border-radius: 999px; }
-  .prose { max-width: 44rem; }
-  .prose img { max-width: 100%; height: auto; border-radius: var(--radius); }
-  .prose h2, .prose h3 { margin-top: 1.6em; }
-  .cover { width: 100%; max-height: 28rem; object-fit: cover; border-radius: var(--radius); margin: 1rem 0 2rem; }
-  .cta { background: var(--ink); color: var(--bg); border-radius: 28px; padding: clamp(1.8rem, 5vw, 3.5rem); }
-  .cta h2 { margin-bottom: .3em; }
-  .cta p { color: #cfcbd6; max-width: 36rem; }
-  .cta .btn { background: var(--orange); color: var(--ink); }
-  .empty { color: var(--muted); }
-  @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
-</style>
