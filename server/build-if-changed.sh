@@ -30,19 +30,23 @@ main() {
   local lock
   lock="$(sha256sum package-lock.json | cut -d' ' -f1)"
   if [ ! -d node_modules ] || [ "$(cat "$STATE/lock-hash" 2>/dev/null || true)" != "$lock" ]; then
-    npm ci --no-audit --no-fund
+    if ! npm ci --no-audit --no-fund; then
+      echo "$key $(date +%s)" > "$STATE/failed"
+      echo "npm ci feilet" >&2
+      return 1
+    fi
     echo "$lock" > "$STATE/lock-hash"
   fi
 
-  # HERAH_ALLOW_FALLBACK=0: feiler heller enn å publisere plassholdere, og da blir forrige versjon stående
-  if HERAH_API="$API" HERAH_ALLOW_FALLBACK=0 npm run build; then
-    rsync -a --delete dist/ "$WWW/"
+  # HERAH_ALLOW_FALLBACK=0: feiler heller enn å publisere plassholdere, og da blir forrige versjon stående.
+  # Bygging og utlegging ligger sammen i testen, så en feil i begge deler gir ventetid før nytt forsøk.
+  if HERAH_API="$API" HERAH_ALLOW_FALLBACK=0 npm run build && rsync -a --delete dist/ "$WWW/"; then
     echo "$key" > "$STATE/built"
     rm -f "$STATE/failed"
     echo "Lagt ut $key"
   else
     echo "$key $(date +%s)" > "$STATE/failed"
-    echo "Bygget feilet – forrige versjon står fortsatt" >&2
+    echo "Bygging eller utlegging feilet – forrige versjon står fortsatt" >&2
     return 1
   fi
 }
