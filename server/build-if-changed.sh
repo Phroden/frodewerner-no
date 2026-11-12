@@ -40,7 +40,8 @@ main() {
 
   # HERAH_ALLOW_FALLBACK=0: feiler heller enn å publisere plassholdere, og da blir forrige versjon stående.
   # Bygging og utlegging ligger sammen i testen, så en feil i begge deler gir ventetid før nytt forsøk.
-  if HERAH_API="$API" HERAH_ALLOW_FALLBACK=0 npm run build && rsync -a --delete dist/ "$WWW/"; then
+  # HERAH_VERSION havner i /herah-build.json, så Herah ser hvilken versjon nettsiden er bygd fra (og sier fra hvis den står stille)
+  if HERAH_API="$API" HERAH_VERSION="$version" HERAH_COMMIT="$head" HERAH_ALLOW_FALLBACK=0 npm run build && rsync -a --delete dist/ "$WWW/"; then
     echo "$key" > "$STATE/built"
     rm -f "$STATE/failed"
     echo "Lagt ut $key"
