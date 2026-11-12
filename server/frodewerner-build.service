@@ -1,0 +1,17 @@
+[Unit]
+Description=Bygg frodewerner.no hvis innholdet i Herah eller koden har endret seg
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=sitebuild
+Environment=HOME=/var/lib/frodewerner-build
+WorkingDirectory=/opt/frodewerner-no
+ExecStart=/opt/frodewerner-no/server/build-if-changed.sh
+TimeoutStartSec=600
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/frodewerner-no /var/www/frodewerner.no /var/lib/frodewerner-build

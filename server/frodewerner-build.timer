@@ -1,0 +1,10 @@
+[Unit]
+Description=Se etter endringer i frodewerner.no hvert minutt
+
+[Timer]
+OnBootSec=1min
+OnUnitInactiveSec=1min
+AccuracySec=10s
+
+[Install]
+WantedBy=timers.target
