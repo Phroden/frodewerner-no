@@ -15,14 +15,14 @@ const prosjekter = (await collection("prosjekter")).slice(0, 6);
   {tjenester.length > 0 && (
     <section>
       <div class="head"><h2>Tjenester</h2><a href="/tjenester">Alle tjenester →</a></div>
-      <div class="grid">{tjenester.map((t) => <ItemCard item={t} href="/tjenester" />)}</div>
+      <div class="grid">{tjenester.map((t) => <ItemCard item={t} href={t.link !== false ? `/tjenester/${t.id}` : "/tjenester"} />)}</div>
     </section>
   )}
 
   {prosjekter.length > 0 && (
     <section>
       <div class="head"><h2>Prosjekter</h2><a href="/prosjekter">Alle prosjekter →</a></div>
-      <div class="grid">{prosjekter.map((p) => <ItemCard item={p} href={`/prosjekter/${p.id}`} />)}</div>
+      <div class="grid">{prosjekter.map((p) => <ItemCard item={p} href={p.link !== false ? `/prosjekter/${p.id}` : "/prosjekter"} />)}</div>
     </section>
   )}
 

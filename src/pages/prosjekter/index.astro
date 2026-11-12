@@ -10,5 +10,5 @@ const prosjekter = await collection("prosjekter");
     <p class="lead">Et utvalg av det jeg har laget.</p>
   </div>
   {prosjekter.length === 0 && <p class="empty">Prosjektene kommer snart.</p>}
-  <div class="grid">{prosjekter.map((p) => <ItemCard item={p} href={`/prosjekter/${p.id}`} />)}</div>
+  <div class="grid">{prosjekter.map((p) => <ItemCard item={p} href={p.link !== false ? `/prosjekter/${p.id}` : undefined} />)}</div>
 </Base>

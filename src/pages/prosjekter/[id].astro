@@ -4,7 +4,7 @@ import { collection } from "../../lib/herah";
 import type { Item } from "../../lib/herah";
 
 export async function getStaticPaths() {
-  return (await collection("prosjekter")).map((p) => ({ params: { id: p.id }, props: { p } }));
+  return (await collection("prosjekter")).filter((p) => p.link !== false).map((p) => ({ params: { id: p.id }, props: { p } }));
 }
 const { p } = Astro.props as { p: Item };
 ---

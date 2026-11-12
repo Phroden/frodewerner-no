@@ -17,6 +17,8 @@ export interface Item {
   excerpt: string;
   html: string;
   cover: string | null;
+  /** Skal posten ha en egen side? Styres under «Nettsted» i Herah (Postene kan åpnes). Mangler = ja. */
+  link?: boolean;
 }
 export interface PageContent { title: string; html: string }
 
@@ -72,6 +74,7 @@ const plain = (html: string) => html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " 
 const clip = (s: string, n = 160) => (s.length > n ? s.slice(0, n).replace(/\s+\S*$/, "") + "…" : s);
 
 type CollectionResp = {
+  links?: boolean;
   fields: { id: string; name: string; config?: { options?: { id: string; name: string }[] } }[];
   items: { id: string; title: string; values: Record<string, unknown> }[];
 };
@@ -107,6 +110,7 @@ async function loadCollection(slug: string): Promise<Item[]> {
       return {
         id: it.id, title: it.title, type: toList(byName("type", it.values)).concat(toList(byName("tags", it.values))),
         status: toList(byName("status", it.values))[0] ?? "", url, html, cover, excerpt: clip(plain(html)),
+        link: c.links !== false,
       };
     }));
   } catch (e) {

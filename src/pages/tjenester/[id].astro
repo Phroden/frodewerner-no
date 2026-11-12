@@ -1,0 +1,21 @@
+---
+// Egen side per tjeneste – bare for tjenester når «Postene kan åpnes» er på under «Nettsted» i Herah
+import Base from "../../layouts/Base.astro";
+import { collection } from "../../lib/herah";
+import type { Item } from "../../lib/herah";
+
+export async function getStaticPaths() {
+  return (await collection("tjenester")).filter((t) => t.link !== false).map((t) => ({ params: { id: t.id }, props: { t } }));
+}
+const { t } = Astro.props as { t: Item };
+---
+<Base title={t.title} description={t.excerpt || undefined}>
+  <div class="hero">
+    <p><a href="/tjenester">← Alle tjenester</a></p>
+    <h1>{t.title}</h1>
+    {t.type.length > 0 && <ul class="tags">{t.type.map((x) => <li>{x}</li>)}</ul>}
+  </div>
+  {t.cover && <img class="cover" src={t.cover} alt="" />}
+  <div class="prose"><Fragment set:html={t.html} /></div>
+  <p><a class="btn" href="/kontakt">Ta kontakt</a></p>
+</Base>

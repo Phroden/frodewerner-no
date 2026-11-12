@@ -1,6 +1,7 @@
 ---
-import Base from "../layouts/Base.astro";
-import { collection } from "../lib/herah";
+import Base from "../../layouts/Base.astro";
+import ItemCard from "../../components/ItemCard.astro";
+import { collection } from "../../lib/herah";
 const tjenester = await collection("tjenester");
 ---
 <Base title="Tjenester" description="Film, stream, klipp og andre tjenester fra Frode Werner Film & Media.">
@@ -10,7 +11,9 @@ const tjenester = await collection("tjenester");
   </div>
   {tjenester.length === 0 && <p class="empty">Tjenestene kommer snart.</p>}
   <div class="grid">
-    {tjenester.map((t) => (
+    {tjenester.map((t) => t.link !== false ? (
+      <ItemCard item={t} href={`/tjenester/${t.id}`} />
+    ) : (
       <article class="card">
         {t.cover && <img src={t.cover} alt="" loading="lazy" />}
         <div class="body prose">

@@ -57,3 +57,6 @@ henter koden til `/opt/frodewerner-no` og slår på timeren. Følg med: `journal
 ### For hånd
 
 `./deploy.sh` bygger lokalt og kopierer til serveren med rsync (nyttig hvis timeren ikke er satt opp).
+
+## Poster: hvilke som vises og om de kan åpnes
+Styres i Herah under «Nettsted»: visning (filter), enkeltposter og «Postene kan åpnes». Er den av, får postene ingen egen side (`/prosjekter/<id>`, `/tjenester/<id>`), og tjenestene viser hele teksten i kortet.
