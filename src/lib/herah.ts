@@ -2,6 +2,7 @@
 // Alt er offentlig, så ingen nøkler trengs. Finnes ikke Herah-data, brukes `fallback` bare lokalt
 // (HERAH_ALLOW_FALLBACK != "0"); i produksjonsbygget feiler bygget heller enn å publisere plassholdere.
 import { md as markdown, safeHref } from "./markdown";
+import { type Embed, embedHtml } from "./embeds";
 import { getImage, inferRemoteSize } from "astro:assets";
 import { fallback } from "./fallback";
 import { homeDefaults, type HomeContent } from "./home-defaults";
@@ -23,6 +24,7 @@ export interface Item {
   link?: boolean;
 }
 export interface PageContent { title: string; html: string }
+type Embeds = Record<string, Embed | null> | undefined;
 
 class HerahError extends Error {
   constructor(path: string, readonly status: number) { super(`${path}: ${status}`); }
@@ -66,11 +68,29 @@ export function localImage(src: string, width = 1200, remoteFallback = true): Pr
   return images.get(key)!;
 }
 
-/** Markdown fra Herah → HTML. Egne blokker (::samling, ::side …) fjernes, og bilder lastes ned (localImage). */
-export async function render(md: string, slug: string): Promise<string> {
-  const text = md.split("\n").filter((l) => !/^\s*::[a-zæøå]+\[/.test(l)).join("\n")
-    .replace(/\/api\/ws\/files\/([0-9a-f-]{36})/gi, `${API}/api/site/${slug}/files/$1`);
+/**
+ * Markdown fra Herah → HTML. Innebygde samlinger (`::samling[…](site:N)`, innholdet i `embeds[N]`) blir tabell, kort, tavle eller datoliste
+ * (embeds.ts); andre egne blokker (::side, ::inkluder, ::bokmerke, skjulte samlinger) fjernes. Bilder lastes ned (localImage).
+ * `src` er id-en til siden eller posten teksten hører til (filene i blokkene hentes via den).
+ */
+export async function render(md: string, slug: string, embeds?: Embeds, src = ""): Promise<string> {
+  const blocks: string[] = [];
+  const lines: string[] = [];
+  for (const l of md.split("\n")) {
+    const m = l.match(/^\s*::samling\[[^\]]*\]\(site:(\d+)\)\s*$/);
+    const e = m ? embeds?.[m[1]] : null;
+    if (e && src) {
+      const base = `${API}/api/site/${slug}/e/${src}/${m![1]}/files`;
+      const covers = new Map<string, string>();
+      for (const it of e.items) if (it.cover) covers.set(it.id, await localImage(`${base}/${it.cover}`, 900));
+      // Plassholder som marked lar være i fred; byttes med HTML-en etterpå
+      lines.push("", `HERAHEMBED${blocks.length}X`, "");
+      blocks.push(embedHtml(e, covers, (id) => `${base}/${id}`));
+    } else if (!/^\s*::[a-zæøå]+\[/.test(l)) lines.push(l);
+  }
+  const text = lines.join("\n").replace(/\/api\/ws\/files\/([0-9a-f-]{36})/gi, `${API}/api/site/${slug}/files/$1`);
   let html = markdown.parse(text, { async: false }) as string;
+  html = html.replace(/<p>HERAHEMBED(\d+)X<\/p>/g, (_, i) => blocks[Number(i)] ?? "");
   // Bilder i teksten: <img src="https://herah…/api/site/<slug>/files/<id>">
   const prefix = `${API}/api/site/`;
   const srcs = [...new Set([...html.matchAll(/<img\b[^>]*\bsrc="([^"]+)"/gi)].map((m) => m[1]).filter((u) => u.startsWith(prefix)))];
@@ -89,7 +109,7 @@ type CollectionResp = {
   fields: { id: string; name: string; config?: { options?: { id: string; name: string }[] } }[];
   items: { id: string; title: string; values: Record<string, unknown> }[];
 };
-type RecordResp = { record: { body?: string; cover?: string | null } };
+type RecordResp = { record: { body?: string; cover?: string | null; embeds?: Embeds } };
 
 /** Alle poster i en publisert samling, med notat og toppbilde hentet per post. Hentes én gang per bygg (flere sider bruker samme samling). */
 const collections = new Map<string, Promise<Item[]>>();
@@ -120,7 +140,7 @@ async function loadCollection(slug: string): Promise<Item[]> {
       let html = "", cover: string | null = null;
       try {
         const r = (await get<RecordResp>(`/${slug}/r/${it.id}`)).record;
-        html = await render(r.body ?? "", slug);
+        html = await render(r.body ?? "", slug, r.embeds, it.id);
         cover = r.cover ? await localImage(`${API}/api/site/${slug}/files/${r.cover}`, 1600) : null;
       } catch (e) {
         // I produksjon stopper bygget heller enn å publisere prosjekter uten tekst og bilde fordi én henting feilet
@@ -144,8 +164,8 @@ async function loadCollection(slug: string): Promise<Item[]> {
 /** En publisert side (tekst), eller null hvis den ikke er publisert. Andre feil stopper produksjonsbygget. */
 export async function page(slug: string): Promise<PageContent | null> {
   try {
-    const p = (await get<{ page: { title: string; body: string } }>(`/${slug}`)).page;
-    return { title: p.title, html: await render(p.body, slug) };
+    const p = (await get<{ page: { id: string; title: string; body: string; embeds?: Embeds } }>(`/${slug}`)).page;
+    return { title: p.title, html: await render(p.body, slug, p.embeds, p.id) };
   } catch (e) {
     if (ALLOW_FALLBACK) return fallback.pages[slug] ?? null;
     if (notPublished(e)) return null;

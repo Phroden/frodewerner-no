@@ -21,6 +21,10 @@ på forsiden, og Kontakt vises alltid.
 og bilder godtas bare med http(s), mailto:, tel: eller relativ adresse (ellers `#`). Det samme gjelder URL-feltet («Se prosjektet»).
 Tester: `npm test`.
 
+**Innebygde samlinger**: en samling du bygger inn i en publisert side eller et publisert postnotat i Herah (`::samling`-blokk), vises på nettsiden med postene
+blokken viser og kolonnene du velger under «🌐 Kolonner på nettsiden» i ⚙ på blokken. Herah sender den som `::samling[…](site:N)` med innholdet i `embeds[N]`;
+`src/lib/embeds.ts` lager tabell, kort med toppbilde (galleri), tavle eller datoliste (kalender) som statisk HTML. Toppbildene lastes ned ved bygging.
+
 **Feil fra Herah** i produksjonsbygget (`HERAH_ALLOW_FALLBACK=0`) stopper bygget, så forrige versjon blir stående: bare 404 (ikke publisert) gir en tom side.
 Samlinger med mer enn 500 poster hentes i flere omganger.
 
