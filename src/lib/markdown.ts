@@ -1,6 +1,25 @@
 // Markdown fra Herah → HTML, uten astro-avhengigheter (så det kan testes med node: npm test).
 import { Marked, type Tokens } from "marked";
 
+/**
+ * Hvilke linjer som står i en kodeblokk, slik Herah leser dem (`codeMask` i site_embed.ts / renderMarkdown i core.js):
+ * en linje som starter med ``` åpner, en linje med bare ``` lukker. En blokklinje (::samling …) i en kodeblokk er tekst.
+ */
+export function codeMask(lines: string[]): boolean[] {
+  let code = false;
+  return lines.map((l) => {
+    if (code) {
+      if (/^\s*```\s*$/.test(l)) code = false;
+      return true;
+    }
+    if (/^\s*```/.test(l)) {
+      code = true;
+      return true;
+    }
+    return false;
+  });
+}
+
 const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 /** Tallentiteter og de navngitte som kan lage «:» eller mellomrom; null hvis noe er ugyldig */

@@ -185,3 +185,13 @@ footer.site nav { display: flex; flex-wrap: wrap; gap: 24px; align-items: center
   .embed-dates li { grid-template-columns: 1fr; gap: 2px; }
   .embed-table th, .embed-table td { padding: 10px 12px; }
 }
+
+/* Bokmerker fra Herah (::bokmerke): lenkekort med tittel, beskrivelse og bilde */
+.bookmark { display: flex; gap: 16px; align-items: stretch; margin: 1.2em 0; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; text-decoration: none; color: inherit; }
+.bookmark:hover { border-color: var(--accent); color: inherit; }
+.bookmark-text { flex: 1; min-width: 0; padding: 14px 18px; display: grid; gap: 4px; align-content: center; }
+.bookmark-text strong { font-weight: 600; }
+.bookmark-text span { color: var(--soft); font-size: 15px; }
+.bookmark-text small { color: var(--muted); font-size: 13px; }
+.prose .bookmark img, .bookmark img { width: 180px; max-width: 34%; object-fit: cover; border-radius: 0; flex-shrink: 0; }
+@media (max-width: 560px) { .bookmark img { display: none; } }

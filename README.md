@@ -26,6 +26,13 @@ blokken viser og kolonnene du velger under «🌐 Kolonner på nettsiden» i ⚙
 `src/lib/embeds.ts` lager tabell, kort med toppbilde (galleri), tavle eller datoliste (kalender) som statisk HTML. Toppbildene lastes ned ved bygging. Overskriften over blokken
 er blokkens navn (kan endres i ⚙ på blokken) og kan skjules der («Vis overskrift over blokken», `show_title: false`; da får skjermlesere navnet som `aria-label`).
 
+**Bokmerker** (`::bokmerke` i Herah) blir lenkekort med tittel, beskrivelse og bilde fra det Herah har hentet (`/api/bookmark`); går det ikke, en enkel lenke.
+Linjer i kodeblokker (```) står urørt, også `::`-linjer (`codeMask` i `src/lib/markdown.ts`, som i Herah).
+
+**Byggestatus**: bygget legger ut `/herah-build.json` med versjonen fra Herah det er bygd fra (`HERAH_VERSION`, satt av `server/build-if-changed.sh` og `deploy.sh`),
+når, og hvilke oppføringer nettsiden bruker (`uses` = `SLUGS` i `src/lib/herah.ts`; `collection()`/`page()` godtar bare disse). Herah henter fila og sier fra
+under «Trenger tilsyn» hvis nettsiden står stille, og Nettsted-fanen varsler om publiserte oppføringer nettsiden ikke bruker. Bruker du en ny oppføring, legg den i `SLUGS`.
+
 **Feil fra Herah** i produksjonsbygget (`HERAH_ALLOW_FALLBACK=0`) stopper bygget, så forrige versjon blir stående: bare 404 (ikke publisert) gir en tom side.
 Samlinger med mer enn 500 poster hentes i flere omganger.
 

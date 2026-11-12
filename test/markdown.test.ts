@@ -43,3 +43,9 @@ test("safeHref", () => {
   assert.equal(safeHref(""), null);
   assert.equal(safeHref(undefined), null);
 });
+
+test("codeMask: linjer i kodeblokker, som i Herah", async () => {
+  const { codeMask } = await import("../src/lib/markdown.ts");
+  const lines = ["a", "```js", "::samling[x](site:0)", "```", "::samling[y](site:1)", "``` ", "b"];
+  assert.deepEqual(codeMask(lines), [false, true, true, true, false, true, true]);
+});

@@ -102,6 +102,24 @@ function detailsHtml(e: Embed, it: EmbedItem, fileUrl?: (id: string) => string, 
   return rows.length ? `<dl class="embed-dl">${rows.join("")}</dl>` : "";
 }
 
+export interface Bookmark { title?: string | null; description?: string | null; site?: string | null }
+
+/**
+ * Et bokmerke (`::bokmerke[tittel](adresse)` i Herah) som kort: tittel, beskrivelse, nettsted og bilde (lastet ned ved bygging).
+ * Mangler det som er hentet, blir det en enkel lenke. Bare http(s)-adresser; ellers ingenting.
+ */
+export function bookmarkHtml(url: string, label: string, meta: Bookmark | null, image = ""): string {
+  const href = safeHref(url);
+  if (!href || !/^https?:\/\//i.test(href)) return "";
+  let host = "";
+  try { host = new URL(href).hostname.replace(/^www\./, ""); } catch { /* ugyldig */ }
+  const title = meta?.title || label || host || href;
+  const desc = meta?.description ?? "";
+  return `<a class="bookmark" href="${esc(href)}" rel="noopener"><span class="bookmark-text"><strong>${esc(title)}</strong>${
+    desc ? `<span>${esc(desc.length > 200 ? desc.slice(0, 198) + "…" : desc)}</span>` : ""
+  }<small>${esc(meta?.site || host)}</small></span>${image ? `<img src="${esc(image)}" alt="" loading="lazy">` : ""}</a>`;
+}
+
 const GROUP_ORDER: Record<string, number> = { todo: 0, in_progress: 1, complete: 2 };
 
 /**

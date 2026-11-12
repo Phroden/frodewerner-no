@@ -66,3 +66,14 @@ test("tom blokk og «viser N av M»", () => {
   assert.match(embedHtml({ ...base, items: [], total: 0 }), /Ingen oppføringer/);
   assert.match(embedHtml({ ...base, total: 700 }), /Viser 2 av 700/);
 });
+
+test("bokmerke som kort, og bare http(s)", async () => {
+  const { bookmarkHtml } = await import("../src/lib/embeds.ts");
+  const h = bookmarkHtml("https://www.example.com/side", "Min lenke", { title: "Eksempel <b>", description: "Beskrivelse", site: "Example" }, "/_astro/b.webp");
+  assert.match(h, /<a class="bookmark" href="https:\/\/www.example.com\/side" rel="noopener">/);
+  assert.match(h, /<strong>Eksempel &lt;b&gt;<\/strong><span>Beskrivelse<\/span><small>Example<\/small>/);
+  assert.match(h, /<img src="\/_astro\/b.webp"/);
+  assert.match(bookmarkHtml("https://www.example.com/", "", null), /<strong>example.com<\/strong>/);
+  assert.equal(bookmarkHtml("javascript:alert(1)", "x", null), "");
+  assert.equal(bookmarkHtml("mailto:a@b.no", "x", null), "");
+});

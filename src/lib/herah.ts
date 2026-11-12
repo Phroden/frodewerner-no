@@ -1,14 +1,24 @@
 // Henter det som er publisert i Herah (herah.frodewerner.no/api/site) når siden bygges.
 // Alt er offentlig, så ingen nøkler trengs. Finnes ikke Herah-data, brukes `fallback` bare lokalt
 // (HERAH_ALLOW_FALLBACK != "0"); i produksjonsbygget feiler bygget heller enn å publisere plassholdere.
-import { md as markdown, safeHref } from "./markdown";
-import { type Embed, embedHtml } from "./embeds";
+import { codeMask, md as markdown, safeHref } from "./markdown";
+import { bookmarkHtml, type Bookmark, type Embed, embedHtml } from "./embeds";
 import { getImage, inferRemoteSize } from "astro:assets";
 import { fallback } from "./fallback";
 import { homeDefaults, type HomeContent } from "./home-defaults";
 export type { HomeContent };
 
 const API = (process.env.HERAH_API ?? "https://herah.frodewerner.no").replace(/\/$/, "");
+
+/**
+ * Oppføringene i Herah (Nettsted) som nettsiden bruker. Står i /herah-build.json (`uses`), så Nettsted-fanen i Herah kan si fra
+ * om publiserte oppføringer som ikke vises noe sted (de er likevel åpne i API-et). collection()/page() godtar bare disse.
+ */
+export const SLUGS = ["tjenester", "prosjekter", "kontakt"] as const;
+export type Slug = typeof SLUGS[number];
+const checkSlug = (slug: string) => {
+  if (!(SLUGS as readonly string[]).includes(slug)) throw new Error(`«${slug}» er ikke i SLUGS i src/lib/herah.ts – legg den til der`);
+};
 const ALLOW_FALLBACK = (process.env.HERAH_ALLOW_FALLBACK ?? "1") !== "0";
 
 export interface Item {
@@ -68,24 +78,53 @@ export function localImage(src: string, width = 1200, remoteFallback = true): Pr
   return images.get(key)!;
 }
 
+/** Det Herah har hentet om et bokmerke (tittel, beskrivelse, bilde). null hvis det ikke går – et bokmerke stopper aldri bygget. */
+async function bookmarkMeta(url: string): Promise<(Bookmark & { image?: string | null }) | null> {
+  try {
+    const r = await fetch(`${API}/api/bookmark?${new URLSearchParams({ url })}`);
+    if (!r.ok) return null;
+    const d = await r.json();
+    return d?.ok ? d : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Markdown fra Herah → HTML. Innebygde samlinger (`::samling[…](site:N)`, innholdet i `embeds[N]`) blir tabell, kort, tavle eller datoliste
- * (embeds.ts); andre egne blokker (::side, ::inkluder, ::bokmerke, skjulte samlinger) fjernes. Bilder lastes ned (localImage).
- * `src` er id-en til siden eller posten teksten hører til (filene i blokkene hentes via den).
+ * (embeds.ts), bokmerker blir kort med bilde; andre egne blokker (::side, ::inkluder, skjulte samlinger) fjernes. Linjer i kodeblokker
+ * står urørt. Bilder lastes ned (localImage). `src` er id-en til siden eller posten teksten hører til (filene i blokkene hentes via den).
  */
 export async function render(md: string, slug: string, embeds?: Embeds, src = ""): Promise<string> {
   const blocks: string[] = [];
   const lines: string[] = [];
-  for (const l of md.split("\n")) {
+  const all = md.split("\n");
+  const code = codeMask(all);
+  // Plassholder som marked lar være i fred; byttes med HTML-en etterpå
+  const placeholder = (html: string) => {
+    if (!html) return;
+    lines.push("", `HERAHEMBED${blocks.length}X`, "");
+    blocks.push(html);
+  };
+  for (const [i, l] of all.entries()) {
+    if (code[i]) {
+      lines.push(l);
+      continue;
+    }
     const m = l.match(/^\s*::samling\[[^\]]*\]\(site:(\d+)\)\s*$/);
     const e = m ? embeds?.[m[1]] : null;
+    const bm = l.match(/^\s*::bokmerke\[([^\]]*)\]\(([^)\s]*)\)\s*$/);
     if (e && src) {
       const base = `${API}/api/site/${slug}/e/${src}/${m![1]}/files`;
       const covers = new Map<string, string>();
       for (const it of e.items) if (it.cover) covers.set(it.id, await localImage(`${base}/${it.cover}`, 900));
-      // Plassholder som marked lar være i fred; byttes med HTML-en etterpå
-      lines.push("", `HERAHEMBED${blocks.length}X`, "");
-      blocks.push(embedHtml(e, covers, (id) => `${base}/${id}`));
+      placeholder(embedHtml(e, covers, (id) => `${base}/${id}`));
+    } else if (bm) {
+      let url = bm[2];
+      try { url = decodeURIComponent(url); } catch { /* som den er */ }
+      const meta = /^https?:\/\//i.test(url) ? await bookmarkMeta(url) : null;
+      const img = meta?.image?.startsWith("/api/bookmark-img/") ? await localImage(`${API}${meta.image}`, 600, false) : "";
+      placeholder(bookmarkHtml(url, bm[1], meta, img));
     } else if (!/^\s*::[a-zæøå]+\[/.test(l)) lines.push(l);
   }
   const text = lines.join("\n").replace(/\/api\/ws\/files\/([0-9a-f-]{36})/gi, `${API}/api/site/${slug}/files/$1`);
@@ -113,7 +152,8 @@ type RecordResp = { record: { body?: string; cover?: string | null; embeds?: Emb
 
 /** Alle poster i en publisert samling, med notat og toppbilde hentet per post. Hentes én gang per bygg (flere sider bruker samme samling). */
 const collections = new Map<string, Promise<Item[]>>();
-export function collection(slug: string): Promise<Item[]> {
+export function collection(slug: Slug): Promise<Item[]> {
+  checkSlug(slug);
   if (!collections.has(slug)) collections.set(slug, loadCollection(slug));
   return collections.get(slug)!;
 }
@@ -162,7 +202,8 @@ async function loadCollection(slug: string): Promise<Item[]> {
 }
 
 /** En publisert side (tekst), eller null hvis den ikke er publisert. Andre feil stopper produksjonsbygget. */
-export async function page(slug: string): Promise<PageContent | null> {
+export async function page(slug: Slug): Promise<PageContent | null> {
+  checkSlug(slug);
   try {
     const p = (await get<{ page: { id: string; title: string; body: string; embeds?: Embeds } }>(`/${slug}`)).page;
     return { title: p.title, html: await render(p.body, slug, p.embeds, p.id) };
