@@ -18,6 +18,8 @@ export interface EmbedItem {
 }
 export interface Embed {
   label: string;
+  /** false = ingen overskrift over blokken (valgt i ⚙ på blokken i Herah). Mangler = vis. */
+  show_title?: boolean;
   layout: "table" | "gallery" | "board" | "calendar" | string;
   title_name: string;
   fields: EmbedField[];
@@ -107,9 +109,12 @@ const GROUP_ORDER: Record<string, number> = { todo: 0, in_progress: 1, complete:
  * `fileUrl` gir adressen til en fil i et filfelt.
  */
 export function embedHtml(e: Embed, covers: Map<string, string> = new Map(), fileUrl?: (id: string) => string): string {
-  const head = `<h3 class="embed-title">${esc(e.label)}</h3>`;
+  const showTitle = e.show_title !== false;
+  const head = showTitle ? `<h3 class="embed-title">${esc(e.label)}</h3>` : "";
+  // Uten synlig overskrift får skjermlesere navnet likevel
+  const open = (cls: string) => `<section class="${cls}"${showTitle ? "" : ` aria-label="${esc(e.label)}"`}>`;
   const more = e.total > e.items.length ? `<p class="embed-more">Viser ${e.items.length} av ${e.total}.</p>` : "";
-  if (!e.items.length) return `<section class="embed">${head}<p class="embed-empty">Ingen oppføringer.</p></section>`;
+  if (!e.items.length) return `${open("embed")}${head}<p class="embed-empty">Ingen oppføringer.</p></section>`;
   let body: string;
 
   if (e.layout === "gallery") {
@@ -151,5 +156,5 @@ export function embedHtml(e: Embed, covers: Map<string, string> = new Map(), fil
       e.items.map((it) => `<tr><th scope="row">${esc(it.title || "Uten navn")}</th>${e.fields.map((f) => `<td>${valueHtml(f, it.values[f.id], fileUrl)}</td>`).join("")}</tr>`).join("")
     }</tbody></table></div>`;
   }
-  return `<section class="embed embed-${esc(e.layout)}">${head}${body}${more}</section>`;
+  return `${open(`embed embed-${esc(e.layout)}`)}${head}${body}${more}</section>`;
 }
