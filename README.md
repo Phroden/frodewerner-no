@@ -41,4 +41,4 @@ frodewerner.no, www.frodewerner.no {
 }
 ```
 
-Siden må bygges på nytt når innholdet i Herah endres (webhook fra Herah er neste steg).
+Legg ut med `./deploy.sh` (bygger og kopierer til serveren). Siden må bygges på nytt når innholdet i Herah endres (webhook fra Herah er neste steg).
